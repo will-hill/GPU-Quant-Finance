@@ -13,10 +13,10 @@ always the same: **same scikit-learn API, no rewrite, NVIDIA GPU speed.**
 
 | # | notebook | One-line GPU fix | Measured CPU → GPU | Short |
 |---|---|---|---|---|
-| **01** | [Spectral clustering of an equity-options vol surface](01-spec-clust/Spectral_Clustering_Options_Demo_with_Benchmarking.ipynb) | `%load_ext cuml.accel` | **254 s → 1.5 s (~171×)**; up to ~240× at scale | NEED LINK |
-| **02** | [Ledoit-Wolf shrinkage cuts portfolio turnover](02-lw-turnover/LedoitWolf_Turnover_Demo.ipynb) | `%load_ext cuml.accel` | **2.5 h → 9 min (~17×)**; −57% turnover | NEED LINK |
-| **03** | [KDE of return distributions — the fat tails the normal model misses](03-kde-stylized-facts/KDE_Stylized_Facts_Demo.ipynb) | `%load_ext cuml.accel` | **~6 min → seconds** for 100 bootstrap KDE refits (grows with sample size) | NEED LINK |
-| **04** | [HDBSCAN finds "statistical sectors" in a detoned correlation matrix](04-hdbscan-corr-stats-sectors/HDBSCAN_Statistical_Sectors_Demo_with_Benchmarking.ipynb) | `%load_ext cudf.pandas`<br>`%load_ext cuml.accel` | **9 min → ~0.5 s** (HDBSCAN on 8,471 tickers / 72 M correlations) | NEED LINK |
+| **01** | [Spectral clustering of an equity-options vol surface](01-spec-clust/Spectral_Clustering_Options_Demo_with_Benchmarking.ipynb) | `%load_ext cuml.accel` | **254 s → 1.5 s (~171×)**; up to ~240× at scale | TBD |
+| **02** | [Ledoit-Wolf shrinkage cuts portfolio turnover](02-lw-turnover/LedoitWolf_Turnover_Demo.ipynb) | `%load_ext cuml.accel` | **2.5 h → 9 min (~17×)**; −57% turnover | https://www.youtube.com/shorts/6eyJM30fMmw |
+| **03** | [KDE of return distributions — the fat tails the normal model misses](03-kde-stylized-facts/KDE_Stylized_Facts_Demo.ipynb) | `%load_ext cuml.accel` | **~6 min → seconds** for 100 bootstrap KDE refits (grows with sample size) | https://www.youtube.com/shorts/s-PO23lKXlw |
+| **04** | [HDBSCAN finds "statistical sectors" in a detoned correlation matrix](04-hdbscan-corr-stats-sectors/HDBSCAN_Statistical_Sectors_Demo_with_Benchmarking.ipynb) | `%load_ext cudf.pandas`<br>`%load_ext cuml.accel` | **9 min → ~0.5 s** (HDBSCAN on 8,471 tickers / 72 M correlations) | https://www.youtube.com/shorts/4-adXn5rA8Y |
 
 The "one-line, zero-code change, GPU acceleration" is the main point:   
 Load NVIDIA's [cuML](https://github.com/rapidsai/cuml)
