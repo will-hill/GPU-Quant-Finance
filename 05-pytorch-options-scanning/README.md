@@ -2,9 +2,9 @@
 
 Pull, solve IV/Greeks, rank, repeat.
 
-**Goal:** scan every US equity option, continuously
+**Goal:** scan the 150 most-active optionable US names, continuously
 
-**Result:** 12.4 scans/min (~4,827 full-market scans per trading day). fp32 GPU solves the whole market in ~25 ms.
+**Result:** 12.4 scans/min across ~270K contracts (~4,827 full scans per trading day). fp32 GPU solves the entire ~270K-contract universe in ~25 ms.
 
 ## Measured Results (live market)
 
@@ -21,7 +21,7 @@ Pull, solve IV/Greeks, rank, repeat.
 - Warm timings (compile pre-market)
 - Full IV solve (30 Newton iterations) + 6 Greeks, fused
 - fp32 vs fp64: a millionth of a vol point -- does not matter at penny precision
-- Also tested on DGX Spark (GB10, aarch64): whole market in 0.18s fp32 -- [as-run notebook](options_scanner_pytorch_DGX_Spark.ipynb)
+- Also tested on DGX Spark (GB10, aarch64): same universe in 0.18s fp32 -- [as-run notebook](options_scanner_pytorch_DGX_Spark.ipynb)
 
 ## Quickstart
 
