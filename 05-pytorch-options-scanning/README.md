@@ -3,6 +3,7 @@
 Pull, solve IV/Greeks, rank, repeat.
 
 **Goal:** scan every US equity option, continuously
+
 **Result:** 12.4 scans/min (~4,827 full-market scans per trading day). fp32 GPU solves the whole market in ~25 ms.
 
 ## Measured Results (live market)
