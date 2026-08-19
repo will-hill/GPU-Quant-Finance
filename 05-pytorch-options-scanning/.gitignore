@@ -1,0 +1,36 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Secrets
+.env
+creds.txt
+
+# Generated data/artifacts
+options_cache/
+timings/
+*.png
+*.svg
+.ipynb_checkpoints/
+
+# Node
+node_modules/
+dashboard/frontend/dist/
+
+# Large data / caches
+*.parquet
+bench_cache/
+scanner_cache/
+cufile.log
+
+# Editor / tooling
+.claude/
+.idea/
+link

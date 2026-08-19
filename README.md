@@ -17,11 +17,8 @@ always the same: **same scikit-learn API, no rewrite, NVIDIA GPU speed.**
 | **02** | [Ledoit-Wolf shrinkage to reduce portfolio turnover](02-lw-turnover/LedoitWolf_Turnover_Demo.ipynb) | `%load_ext cuml.accel` | **2.5 h → 9 min (~17×)**; −57% turnover | https://www.youtube.com/shorts/6eyJM30fMmw |
 | **03** | [KDE of return distributions vs the normal model](03-kde-stylized-facts/KDE_Stylized_Facts_Demo.ipynb) | `%load_ext cuml.accel` | **~6 min → seconds** for 100 bootstrap KDE refits (grows with sample size) | https://www.youtube.com/shorts/s-PO23lKXlw |
 | **04** | [HDBSCAN of a detoned, returns correlation matrix](04-hdbscan-corr-stats-sectors/HDBSCAN_Statistical_Sectors_Demo_with_Benchmarking.ipynb) | `%load_ext cudf.pandas`<br>`%load_ext cuml.accel` | **9 min → ~0.5 s** (HDBSCAN on 8,471 tickers / 72 M correlations) | https://www.youtube.com/shorts/4-adXn5rA8Y |
+| **05** | [Options Scanning with PyTorch and Theta Data](05-pytorch-options-scanning/options_scanner_pytorch.ipynb) | `%load_ext cudf.pandas`<br>`%load_ext cuml.accel` | **10M options per sec** | TBD |
 
-The "one-line, zero-code change, GPU acceleration" is the main point:   
-Load NVIDIA's [cuML](https://github.com/rapidsai/cuml)
-zero-code-change accelerator (and [cuDF](https://github.com/rapidsai/cudf) for dataframes) before
-your imports, and the *same* scikit-learn / pandas code runs on the GPU.
 
 ## Data
 
@@ -31,6 +28,7 @@ your imports, and the *same* scikit-learn / pandas code runs on the GPU.
 | 03 | `data/intraday_returns.parquet` (5.5 MB) | ✅ included — runs as-is |
 | 02 | Stooq 5-minute + daily OHLCV panels (hundreds of MB) | ➖ not included — **falls back to a synthetic factor-model panel** of the same shape, so the notebook runs end-to-end without them (committed outputs are from the real data) |
 | 04 | `data/stooq_daily_us.parquet` (240 MB) | ❌ too large for GitHub — **rebuild from Stooq** (below). `data/stooq_us_etf_tickers.txt` is included. |
+| 05 | **https://www.thetadata.net/** | [Theta Data Python API](https://docs.thetadata.us/Python-Library/Getting-Started.html) |
 
 ### Rebuilding the Stooq dataset (notebook 04)
 
