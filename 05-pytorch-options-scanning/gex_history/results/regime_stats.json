@@ -1,0 +1,247 @@
+{
+  "cut": "sign of gex_net_usd at the close of D, in force for D+1",
+  "n_days": 751,
+  "share_negative_days": 0.5792276964047937,
+  "tests_sign_cut": [
+    {
+      "test": "range",
+      "outcome": "range_pct on D+1",
+      "n_pos": 316,
+      "n_neg": 434,
+      "mean_pos": 0.0074751715075358155,
+      "mean_neg": 0.012167593039498293,
+      "median_pos": 0.006757393456554756,
+      "median_neg": 0.010567557123675086,
+      "diff": -0.004692421531962477,
+      "ci_lo": -0.005666090629333051,
+      "ci_hi": -0.0038559524221992176,
+      "p_mwu": 4.0899673254702744e-32,
+      "expectation": "lower in +GEX",
+      "verdict": "supported"
+    },
+    {
+      "test": "move",
+      "outcome": "abs(ret_cc) on D+1",
+      "n_pos": 316,
+      "n_neg": 434,
+      "mean_pos": 0.004596515288679774,
+      "mean_neg": 0.007980295231859677,
+      "median_pos": 0.0035457812294350474,
+      "median_neg": 0.006283646397015308,
+      "diff": -0.003383779943179903,
+      "ci_lo": -0.004310471503413551,
+      "ci_hi": -0.0025038422230631977,
+      "p_mwu": 7.750399732573966e-13,
+      "expectation": "lower in +GEX",
+      "verdict": "supported"
+    },
+    {
+      "test": "forward vol",
+      "outcome": "annualized std of ret_cc over D+1..D+5",
+      "n_pos": 316,
+      "n_neg": 430,
+      "mean_pos": 0.09838104767445258,
+      "mean_neg": 0.1474046871661095,
+      "median_pos": 0.08849899459007368,
+      "median_neg": 0.12834503571501707,
+      "diff": -0.04902363949165692,
+      "ci_lo": -0.06083813065365149,
+      "ci_hi": -0.03811556955215914,
+      "p_mwu": 4.558485307532847e-21,
+      "expectation": "lower in +GEX",
+      "verdict": "supported"
+    },
+    {
+      "test": "continuation",
+      "outcome": "sign(ret D+1) == sign(ret D)",
+      "n_pos": 316,
+      "n_neg": 434,
+      "mean_pos": 0.5474683544303798,
+      "mean_neg": 0.49539170506912444,
+      "median_pos": 1.0,
+      "median_neg": 0.0,
+      "diff": 0.052076649361255334,
+      "ci_lo": -0.020737327188940058,
+      "ci_hi": 0.124307297439188,
+      "p_mwu": 0.15909388790243684,
+      "expectation": "lower in +GEX",
+      "verdict": "not supported"
+    },
+    {
+      "test": "gap fade",
+      "outcome": "sign(open->close D+1) != sign(close D -> open D+1)",
+      "n_pos": 316,
+      "n_neg": 434,
+      "mean_pos": 0.5411392405063291,
+      "mean_neg": 0.4976958525345622,
+      "median_pos": 1.0,
+      "median_neg": 0.0,
+      "diff": 0.04344338797176689,
+      "ci_lo": -0.026789360088665948,
+      "ci_hi": 0.11770110249081261,
+      "p_mwu": 0.24017501501263128,
+      "expectation": "higher in +GEX",
+      "verdict": "direction only, CI includes 0"
+    },
+    {
+      "test": "autocorrelation",
+      "outcome": "lag-1 autocorrelation of ret_cc within regime",
+      "n_pos": 316,
+      "n_neg": 434,
+      "mean_pos": 0.06446295019855382,
+      "mean_neg": -0.08816670669846263,
+      "median_pos": NaN,
+      "median_neg": NaN,
+      "diff": 0.15262965689701646,
+      "ci_lo": -0.09638041100355797,
+      "ci_hi": 0.36541752017327983,
+      "p_mwu": 0.0507037453150403,
+      "expectation": "negative in +GEX",
+      "verdict": "not supported"
+    }
+  ],
+  "tests_tercile_cut": null,
+  "cross_correlation_gex_vs_range": [
+    {
+      "k": -5,
+      "pearson": -0.18124875726032014,
+      "spearman": -0.16781213700881098,
+      "n": 751
+    },
+    {
+      "k": -4,
+      "pearson": -0.2116399503455488,
+      "spearman": -0.21749185483185543,
+      "n": 751
+    },
+    {
+      "k": -3,
+      "pearson": -0.23533019937303204,
+      "spearman": -0.2676136215542398,
+      "n": 751
+    },
+    {
+      "k": -2,
+      "pearson": -0.2515768327716942,
+      "spearman": -0.29706283820154694,
+      "n": 751
+    },
+    {
+      "k": -1,
+      "pearson": -0.30816362118033436,
+      "spearman": -0.36865832790322123,
+      "n": 751
+    },
+    {
+      "k": 0,
+      "pearson": -0.3965790061804083,
+      "spearman": -0.5130614216505652,
+      "n": 751
+    },
+    {
+      "k": 1,
+      "pearson": -0.38836208497799746,
+      "spearman": -0.5182673320308124,
+      "n": 750
+    },
+    {
+      "k": 2,
+      "pearson": -0.3632262622372181,
+      "spearman": -0.47072728700656125,
+      "n": 749
+    },
+    {
+      "k": 3,
+      "pearson": -0.3299901816822244,
+      "spearman": -0.4032976612044947,
+      "n": 748
+    },
+    {
+      "k": 4,
+      "pearson": -0.28384362622384907,
+      "spearman": -0.3242438003364694,
+      "n": 747
+    },
+    {
+      "k": 5,
+      "pearson": -0.24571046601348337,
+      "spearman": -0.28410078047223164,
+      "n": 746
+    }
+  ],
+  "pinning": [
+    {
+      "days": "all days",
+      "regime in force": 1,
+      "n": 316,
+      "mean dist to wall %": 0.787435975562588,
+      "median dist to wall %": 0.6238051754361872,
+      "mean dist to nearest $5 %": 0.21190819852370613,
+      "share of days closer to wall than prev close": 0.4462025316455696
+    },
+    {
+      "days": "all days",
+      "regime in force": -1,
+      "n": 434,
+      "mean dist to wall %": 2.8947413842052696,
+      "median dist to wall %": 2.146844926981938,
+      "mean dist to nearest $5 %": 0.21308494947229284,
+      "share of days closer to wall than prev close": 0.5460829493087558
+    },
+    {
+      "days": "all days",
+      "regime in force": "p (MWU, + vs -)",
+      "n": 750,
+      "mean dist to wall %": 1.2311011669928744e-48,
+      "median dist to wall %": NaN,
+      "mean dist to nearest $5 %": NaN,
+      "share of days closer to wall than prev close": NaN
+    },
+    {
+      "days": "third Fridays",
+      "regime in force": 1,
+      "n": 18,
+      "mean dist to wall %": 0.5954332252734165,
+      "median dist to wall %": 0.44465411398375565,
+      "mean dist to nearest $5 %": 0.1637778342487355,
+      "share of days closer to wall than prev close": 0.3888888888888889
+    },
+    {
+      "days": "third Fridays",
+      "regime in force": -1,
+      "n": 15,
+      "mean dist to wall %": 2.8353956584258304,
+      "median dist to wall %": 2.4327784891165174,
+      "mean dist to nearest $5 %": 0.1682315585939663,
+      "share of days closer to wall than prev close": 0.4
+    },
+    {
+      "days": "third Fridays",
+      "regime in force": "p (MWU, + vs -)",
+      "n": 33,
+      "mean dist to wall %": 0.00042329109215993854,
+      "median dist to wall %": NaN,
+      "mean dist to nearest $5 %": NaN,
+      "share of days closer to wall than prev close": NaN
+    }
+  ],
+  "intraday_ac1_by_regime": [
+    {
+      "regime": 1,
+      "mean": -0.0928675876142001,
+      "median": -0.09051298423605882,
+      "ci_lo": -0.12463768110835255,
+      "ci_hi": -0.05999888144373028,
+      "n": 310
+    },
+    {
+      "regime": -1,
+      "mean": -0.06564102498929753,
+      "median": -0.08114217969838738,
+      "ci_lo": -0.0943156801190091,
+      "ci_hi": -0.03686596697208161,
+      "n": 433
+    }
+  ],
+  "intraday_mwu_p": 0.27540293949898687
+}

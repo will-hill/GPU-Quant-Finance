@@ -1,0 +1,37 @@
+{
+  "vendor_gamma_missing_share_rows": 0.0,
+  "vendor_gamma_missing_share_oi": 0.0,
+  "vendor_gamma_zero_share_rows": 0.02324713443754636,
+  "daily_vendor_over_engine_gex_by_right": {
+    "calls": {
+      "median": 1.0062799815826005,
+      "p10": 0.995898551652417,
+      "p90": 1.0122105845320164
+    },
+    "puts": {
+      "median": 0.9571704211555472,
+      "p10": 0.9396505790057325,
+      "p90": 0.9675414117340618
+    }
+  },
+  "all": {
+    "n_days": 751,
+    "corr": 0.9991990630826291,
+    "sign_agreement": 0.9454061251664447,
+    "rel_diff_median": 0.18052362143009854,
+    "rel_diff_p99": 10.062815820075631,
+    "abs_diff_usd_median": 717885632.87059,
+    "abs_diff_usd_p99": 1513426140.7365055,
+    "vendor_minus_engine_usd_median": 717885632.87059
+  },
+  "dte_le_7": {
+    "n_days": 751,
+    "corr": 0.9997679766880354,
+    "sign_agreement": 0.9826897470039947,
+    "rel_diff_median": 0.04055026804941535,
+    "rel_diff_p99": 2.738876274942019,
+    "abs_diff_usd_median": 78792461.0191431,
+    "abs_diff_usd_p99": 268013936.35142756,
+    "vendor_minus_engine_usd_median": 77457013.86532736
+  }
+}
