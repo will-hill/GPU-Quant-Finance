@@ -1,0 +1,83 @@
+{
+  "generated_at": "2026-09-15T21:16:17",
+  "window": {
+    "start": "2023-09-15",
+    "end": "2026-09-14"
+  },
+  "symbol": "SPY",
+  "max_dte": 120,
+  "workers": 8,
+  "weekdays_in_window": 782,
+  "trading_days_complete": 751,
+  "first_day": "2023-09-15",
+  "last_day": "2026-09-14",
+  "holidays_no_data": [
+    "2023-11-23",
+    "2023-12-25",
+    "2024-01-01",
+    "2024-01-15",
+    "2024-02-19",
+    "2024-03-29",
+    "2024-05-27",
+    "2024-06-19",
+    "2024-07-04",
+    "2024-09-02",
+    "2024-11-28",
+    "2024-12-25",
+    "2025-01-01",
+    "2025-01-09",
+    "2025-01-20",
+    "2025-02-17",
+    "2025-04-18",
+    "2025-05-26",
+    "2025-06-19",
+    "2025-07-04",
+    "2025-09-01",
+    "2025-11-27",
+    "2025-12-25",
+    "2026-01-01",
+    "2026-01-19",
+    "2026-02-16",
+    "2026-04-03",
+    "2026-05-25",
+    "2026-06-19",
+    "2026-07-03",
+    "2026-09-07"
+  ],
+  "partial_days": {},
+  "files_downloaded_this_run": 0,
+  "wall_seconds_this_run": 1.1,
+  "rows_per_day": {
+    "eod": {
+      "min": 4034,
+      "median": 5740,
+      "max": 8958,
+      "total": 4523498
+    },
+    "oi": {
+      "min": 4034,
+      "median": 5616,
+      "max": 8600,
+      "total": 4417181
+    },
+    "greeks": {
+      "min": 4034,
+      "median": 5740,
+      "max": 8958,
+      "total": 4528014
+    }
+  },
+  "spy_stock_eod_rows": 824,
+  "sofr_problems": {
+    "2023-09-15..2023-12-31": "_MultiThreadedRendezvous StatusCode.INVALID_ARGUMENT Requesting Interest Rate data before 2024-01-01 with FREE subscription.\nTo obtain access, please consider upgrading here! ( https://www.thet"
+  },
+  "sofr_rows": 988,
+  "sofr_first_date": "2024-01-01",
+  "intraday_months": 37,
+  "intraday_months_ok": 37,
+  "intraday_rows": 305762,
+  "intraday_wall_seconds_this_run": 241.0,
+  "intraday_problems": {},
+  "cache_bytes": 606255484,
+  "cache_mb": 606.3
+}
