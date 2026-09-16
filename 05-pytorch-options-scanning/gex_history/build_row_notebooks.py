@@ -112,6 +112,7 @@ for n, slug, title, body, cols, fields in ROWS:
     cells = [nbf.v4.new_markdown_cell(f"# Row {n}: {title}\n\n{table}"),
              nbf.v4.new_code_cell(SETUP.format(chain=", with_chain=True" if n == 5 else "")),
              nbf.v4.new_code_cell(body),
+             nbf.v4.new_code_cell(f"_ = R.fig_open{n}(ctx, res, G.FIGURES / 'row{n:02d}_opener.png')   # the video opener, in dollars, percent and dates"),
              nbf.v4.new_code_cell(f"R.per_name({cols!r}).round(3)")]
     for c in cells:
         if c["cell_type"] == "code":
