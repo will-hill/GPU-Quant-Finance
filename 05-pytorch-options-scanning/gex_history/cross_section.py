@@ -247,3 +247,59 @@ def fig_remark_by_name(t6_by_name: dict, path=None):
     if path:
         fig.savefig(path, bbox_inches="tight", pad_inches=0.25)
     return fig
+
+
+# ----------------------------------------------------------------------------- terciles (single names rarely change sign)
+def next_day_by_tercile(symbols) -> pd.DataFrame:
+    """Within each name: next-day range relative to the name's trailing 20-day mean, in the bottom third of the
+    name's own net GEX (most negative or least positive) against the top third. Ratio bottom over top > 1 means
+    low GEX goes with a wider next day, the SPY direction."""
+    from scipy.stats import mannwhitneyu
+    rows = []
+    for s in symbols:
+        d = load_daily(s).copy()
+        d["range_rel_next"] = d["range_pct"].shift(-1) / d["range_pct"].rolling(20).mean()
+        d["absret_next"] = d["ret_cc"].abs().shift(-1)
+        d = d.dropna(subset=["range_rel_next"])
+        if len(d) < 60:
+            rows.append({"symbol": s.upper(), "n": int(len(d))}); continue
+        lo_q, hi_q = d["gex_net_usd"].quantile([1 / 3, 2 / 3])
+        lo = d[d["gex_net_usd"] <= lo_q]; hi = d[d["gex_net_usd"] >= hi_q]
+        rows.append({"symbol": s.upper(), "n": int(len(d)), "share_negative": float((d["regime"] < 0).mean()),
+                     "gex_bottom_third_max_bn": float(lo_q / 1e9), "gex_top_third_min_bn": float(hi_q / 1e9),
+                     "range_rel_bottom": float(lo["range_rel_next"].mean()), "range_rel_top": float(hi["range_rel_next"].mean()),
+                     "ratio_bottom_over_top": float(lo["range_rel_next"].mean() / hi["range_rel_next"].mean()),
+                     "absret_bottom": float(lo["absret_next"].mean()), "absret_top": float(hi["absret_next"].mean()),
+                     "p_mwu": float(mannwhitneyu(lo["range_rel_next"], hi["range_rel_next"]).pvalue)})
+    return pd.DataFrame(rows).set_index("symbol")
+
+
+def pooled_tercile_test(panel: pd.DataFrame) -> dict:
+    """Pooled over names: bottom third against top third of each name's own GEX (computed within the name)."""
+    from scipy.stats import mannwhitneyu
+    p = panel.dropna(subset=["range_rel_next"]).copy()
+    q = p.groupby("symbol")["gex_net_usd"].transform(lambda x: pd.qcut(x.rank(method="first"), 3, labels=False))
+    a = p.loc[q == 0, "range_rel_next"].to_numpy(); b = p.loc[q == 2, "range_rel_next"].to_numpy()
+    lo, hi = I.boot_diff(a, b)
+    return {"n_bottom": int(len(a)), "n_top": int(len(b)), "n_names": int(p["symbol"].nunique()), "range_rel_bottom": float(a.mean()), "range_rel_top": float(b.mean()),
+            "ratio_bottom_over_top": float(a.mean() / b.mean()), "diff": float(a.mean() - b.mean()), "ci_lo": lo, "ci_hi": hi, "p_mwu": float(mannwhitneyu(a, b).pvalue),
+            "absret_bottom": float(p.loc[q == 0, "absret_next"].mean()), "absret_top": float(p.loc[q == 2, "absret_next"].mean())}
+
+
+def fig_tercile_by_name(tbl: pd.DataFrame, path=None):
+    """Next-day relative range in the name's bottom GEX third over its top third, one bar per name."""
+    import matplotlib.pyplot as plt
+    G.style()
+    t = tbl.dropna(subset=["ratio_bottom_over_top"]).sort_values("ratio_bottom_over_top")
+    fig, ax = plt.subplots(figsize=(G.FIG_W, max(G.FIG_H, 0.22 * len(t) + 1.5)))
+    ys = np.arange(len(t))
+    cols = [G.ORANGE if r > 1 else G.CYAN for r in t["ratio_bottom_over_top"]]
+    ax.barh(ys, t["ratio_bottom_over_top"], color=cols, height=0.7, lw=0)
+    ax.axvline(1.0, color=G.FG, lw=1.0, ls="--")
+    ax.set_yticks(ys); ax.set_yticklabels([f"{s}  (negative {r.share_negative:.0%} of days, p {r.p_mwu:.2f})" for s, r in t.iterrows()], fontsize=9)
+    ax.set_xlabel("next-day range relative to own mean: bottom GEX third / top GEX third")
+    ax.set_title("Low GEX, wider next day: name by name", loc="left", pad=22)
+    ax.text(0.0, 1.01, f"{int((t['ratio_bottom_over_top'] > 1).sum())} of {len(t)} names above 1; median ratio {t['ratio_bottom_over_top'].median():.2f}; terciles of each name's own net GEX", transform=ax.transAxes, color=G.DIM, fontsize=10, va="bottom")
+    if path:
+        fig.savefig(path, bbox_inches="tight", pad_inches=0.25)
+    return fig

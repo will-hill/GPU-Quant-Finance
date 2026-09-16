@@ -31,6 +31,20 @@ def R():
     return json.loads(p.read_text()) if p.exists() else None
 
 
+def zero_dte_line(r):
+    t8, t8c = r.get("T8_zero_dte_layer"), r.get("T8b_zero_dte_controls")
+    if not t8:
+        return "7. 0DTE layer: (filled after execution)."
+    bb = {int(x["bucket"]): x for x in t8["by_bucket"]}
+    last = t8["last_half_hour_by_0dte_exposure_at_1530"]["all"]
+    ct = t8c["last_half_hour_controlled_t"]; strata = t8c["last_half_hour_within_day_vol_strata"]; oi = t8c["same_day_expiry_oi_growth_on_last_day"]
+    return (f"7. The 0DTE layer the daily print never sees: same-day-expiry contracts carry a median {bb[0]['ugex_0dte_bn']:.1f} $bn of unsigned gamma exposure at 10:00 against "
+            f"{bb[0]['book_abs_bn']:.1f} $bn for the whole standing book, {bb[0]['share_0dte']:.0%} of the total, from positions as of the prior close alone, and that OI roughly doubles on the last day before expiry (median ratio {oi['median_ratio_D_over_Dminus1']:.2f}). "
+            f"Its magnitude damps the next half hour beyond the re-marked book (joint regression t = {t8['joint_regression_t']['u0dte_rank']:.1f} against {t8['joint_regression_t']['remark_rank']:.1f} for the book; its sign carries nothing, t = {t8['joint_regression_t']['s0dte_rank']:.1f}). "
+            f"At 15:30 the top third of 0DTE exposure is followed by a 15:30 to 16:00 range of {last['high_0dte']:.2f} against {last['last_half_hour_range_adj_low_0dte']:.2f} for the bottom third (CI [{last['ci_lo']:+.2f}, {last['ci_hi']:+.2f}]); "
+            f"controlling for the day's range so far the effect shrinks to t = {ct['u0dte_rank']:.1f}, holding in the calm and wide thirds of days (CIs [{strata['calm so far']['ci_lo']:+.2f}, {strata['calm so far']['ci_hi']:+.2f}] and [{strata['wide so far']['ci_lo']:+.2f}, {strata['wide so far']['ci_hi']:+.2f}]) and not in the middle third.")
+
+
 def conclusions_md():
     r = R()
     if r is None:
@@ -45,6 +59,7 @@ def conclusions_md():
              f"4. Intraday flips matter: the re-marked sign differs from the prior close on {t2['share_days_with_any_flip']:.0%} of days. Among days that started within 0.5% of the flip, crossing up from a negative start cut the rest-of-day range to {nf['neg_to_pos']['post_range_adj_cross']:.2f}x the time-of-day median against {nf['neg_to_pos']['post_range_adj_stay']:.2f}x when it stayed (CI [{nf['neg_to_pos']['ci_lo']:+.2f}, {nf['neg_to_pos']['ci_hi']:+.2f}]); crossing down from a positive start raised it to {nf['pos_to_neg']['post_range_adj_cross']:.2f}x against {nf['pos_to_neg']['post_range_adj_stay']:.2f}x (CI [{nf['pos_to_neg']['ci_lo']:+.2f}, {nf['pos_to_neg']['ci_hi']:+.2f}]).",
              f"5. Walls are not intraday support or resistance: the mean 30-minute return after the first touch is {t4['call']['after_touch_30m_bp_mean']:+.1f} bp for the call wall (CI [{t4['call']['after_touch_30m_ci'][0]:+.1f}, {t4['call']['after_touch_30m_ci'][1]:+.1f}], n = {t4['call']['n_touch_30m']}) and {t4['put']['after_touch_30m_bp_mean']:+.1f} bp for the put wall (CI [{t4['put']['after_touch_30m_ci'][0]:+.1f}, {t4['put']['after_touch_30m_ci'][1]:+.1f}], n = {t4['put']['n_touch_30m']}), indistinguishable from the placebo levels.",
              f"6. Model choice: solving the same chain as European instead of American changes the daily sign on {t7['days_sign_differs']} of 751 days and moves net GEX by a median {t7['median_abs_diff_bn']:.2f} $bn; American gamma is {t7['put_itm_median_ratio']:.3f}x the European value for in-the-money puts and equal for calls.",
+             zero_dte_line(r),
              "", "Educational analysis, not a trading strategy."]
     return "\n".join(lines)
 
@@ -171,6 +186,27 @@ _ = I.fig_time_of_day(t5, G.FIGURES / "f9_time_of_day.png")
 """)
 
 md("""
+## The 0DTE layer
+
+Contracts expiring on day D are gone at the close and never enter the daily print, yet they are alive all session. Their open interest is in the OI file dated D (positions as of the D-1 close, the freshest available during D), their IV comes from the D-1 solve of the same contracts, and gamma is re-marked at every bucket close with the true remaining time. Positions opened during D are invisible, so this layer is a lower bound. Tests: its size against the standing book by time of day, whether its magnitude adds to the next-bucket range prediction, and the 15:30 to 16:00 range against the 0DTE exposure at 15:30, with the day's own range so far as a control.
+""")
+
+code("""
+t0 = time.perf_counter()
+layer = I.zero_dte_layer(sol, daily, ob)
+t8 = I.t8_zero_dte(layer); t8c = I.t8_controls(layer, sol, daily)
+print(f"{t8['n_days']} days, median {t8['median_contracts_per_day']:.0f} same-day contracts within 3% of the prior close, {time.perf_counter() - t0:.0f}s")
+print("Spearman with the next bucket's range:", {k: round(v, 3) for k, v in t8["spearman_next_range"].items()})
+print("joint regression t (next bucket):", {k: round(v, 1) for k, v in t8["joint_regression_t"].items()})
+print("last half hour, controlled for range so far and regime, t:", {k: round(v, 1) for k, v in t8c["last_half_hour_controlled_t"].items()})
+print("same-day-expiry OI on D over D-1:", {k: round(v, 2) for k, v in t8c["same_day_expiry_oi_growth_on_last_day"].items()})
+display(pd.DataFrame(t8["by_bucket"]).set_index("bucket").style.format("{:.3f}"))
+display(pd.DataFrame(t8["last_half_hour_by_0dte_exposure_at_1530"]).T.style.format("{:.3f}"))
+display(pd.DataFrame(t8c["last_half_hour_within_day_vol_strata"]).T.style.format("{:.3f}"))
+_ = I.fig_zero_dte(t8, G.FIGURES / "f14_zero_dte.png")
+""")
+
+md("""
 ## The exercise model's effect
 
 The same chain solved with European exercise (Black-Scholes-Merton) instead of the American engine: daily sign agreement, median absolute difference in net GEX, and the gamma ratio by moneyness.
@@ -181,7 +217,8 @@ t7 = I.t7_model_choice(sol, daily)
 print(json.dumps(t7, indent=1))
 res = {"symbol": "SPY", "buckets_minutes": 30, "T1_intraday_vol_by_regime": t1.reset_index().to_dict("records"), "T2_remark_vs_stale": t2,
        "T3_intraday_flips": t3, "T3b_near_flip_control_0.5pct": t3b, "T3b_near_flip_control_1pct": t3b_1, "T4_wall_touches": t4,
-       "T5_time_of_day_range_pct": t5.reset_index().to_dict("records"), "T6_remark_tracks_next_print": t6, "T7_model_choice_american_vs_european": t7}
+       "T5_time_of_day_range_pct": t5.reset_index().to_dict("records"), "T6_remark_tracks_next_print": t6, "T7_model_choice_american_vs_european": t7,
+       "T8_zero_dte_layer": t8, "T8b_zero_dte_controls": t8c}
 G.save_json(res, G.RESULTS / "intraday_spy.json")
 """)
 

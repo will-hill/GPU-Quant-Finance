@@ -140,6 +140,64 @@ the same evaluations through the engine's CPU batch driver in fp64 on the AMD Th
 re-mark of 200 names with 1,500 to 3,000 contracts each is 0.11 to 0.22 s on the GPU and 14 to 27 s on
 the CPU path. The fp32 profile differs from the CPU fp64 profile by at most a few 1e-4 of its level.
 
+## Cross-section: the most active names (`gex_cross_section.ipynb`)
+
+`download_universe.py` pulled one year (2025-09-15 to 2026-09-14) of quotes and open interest for the
+40 most active names in the scanner's universe plus the SPX book (SPX and SPXW roots on the SPX spot,
+European exercise), their daily bars and 1-minute bars. `cross_section.run_symbol` runs the SPY pipeline
+per name (flat dividend yield per name from `gexlib.Q_BY_SYMBOL`, 0 when not listed). Structure of the
+books, GEX in dollars per 1% move, from `results/cross_section/{sym}_daily.csv`:
+
+| symbol | days | negative-GEX days | median net GEX, $bn per 1% | median abs GEX | contracts per day |
+|---|---|---|---|---|---|
+| SPX | 251.0 | 38% | +14.55 | 32.18 | 10711.0 |
+| SPY | 251.0 | 63% | -2.69 | 4.59 | 3595.0 |
+| QQQ | 251.0 | 59% | -0.86 | 2.37 | 2988.0 |
+| GLD | 251.0 | 20% | +1.38 | 1.38 | 1850.0 |
+| IWM | 251.0 | 82% | -0.97 | 1.02 | 1487.0 |
+| AAPL | 251.0 | 2% | +0.97 | 0.97 | 500.0 |
+| NVDA | 251.0 | 5% | +0.80 | 0.80 | 490.0 |
+| MSFT | 251.0 | 19% | +0.43 | 0.43 | 753.0 |
+| AMZN | 251.0 | 4% | +0.41 | 0.41 | 461.0 |
+| GOOGL | 251.0 | 11% | +0.30 | 0.30 | 602.0 |
+| META | 251.0 | 29% | +0.22 | 0.28 | 1114.0 |
+| TSLA | 251.0 | 20% | +0.25 | 0.27 | 838.0 |
+| GOOG | 251.0 | 21% | +0.15 | 0.15 | 477.0 |
+| AVGO | 251.0 | 30% | +0.08 | 0.11 | 642.0 |
+| AMD | 251.0 | 23% | +0.09 | 0.11 | 384.0 |
+| SMH | 251.0 | 66% | -0.07 | 0.10 | 664.0 |
+| MU | 251.0 | 19% | +0.08 | 0.10 | 604.0 |
+| SLV | 251.0 | 16% | +0.09 | 0.09 | 966.0 |
+| PLTR | 251.0 | 24% | +0.08 | 0.09 | 374.0 |
+| TSM | 251.0 | 33% | +0.05 | 0.08 | 454.0 |
+| MSTR | 251.0 | 15% | +0.05 | 0.06 | 437.0 |
+| NFLX | 251.0 | 51% | -0.00 | 0.05 | 495.0 |
+| ORCL | 251.0 | 51% | -0.00 | 0.05 | 366.0 |
+| GS | 251.0 | 32% | +0.03 | 0.05 | 952.0 |
+| INTC | 251.0 | 11% | +0.04 | 0.05 | 363.0 |
+| SPCX | 81.0 | 63% | -0.00 | 0.04 | 422.0 |
+| ASML | 251.0 | 31% | +0.03 | 0.04 | 883.0 |
+| IBM | 251.0 | 22% | +0.02 | 0.03 | 340.0 |
+| EWY | 251.0 | 34% | +0.01 | 0.02 | 455.0 |
+| SNDK | 251.0 | 33% | +0.01 | 0.02 | 791.0 |
+| MRVL | 251.0 | 24% | +0.02 | 0.02 | 350.0 |
+| DELL | 251.0 | 24% | +0.02 | 0.02 | 403.0 |
+| CRWV | 251.0 | 41% | +0.01 | 0.02 | 427.0 |
+| ARM | 251.0 | 45% | +0.00 | 0.01 | 376.0 |
+| DRAM | 110.0 | 25% | +0.01 | 0.01 | 442.0 |
+| WDC | 251.0 | 26% | +0.01 | 0.01 | 419.0 |
+| BE | 251.0 | 22% | +0.01 | 0.01 | 400.0 |
+| SKHY | 43.0 | 51% | -0.00 | 0.01 | 398.0 |
+| NBIS | 251.0 | 38% | +0.00 | 0.01 | 391.0 |
+| STX | 251.0 | 23% | +0.01 | 0.01 | 454.0 |
+| SOXL | 251.0 | 29% | +0.01 | 0.01 | 416.0 |
+| ASTS | 251.0 | 43% | +0.00 | 0.00 | 325.0 |
+
+Index and ETF books are put-dominated; the mega-caps are call-dominated and almost never negative, so
+the within-name tests use each name's own GEX terciles rather than the sign. Test results and the
+pooled intraday re-mark tests are in `results/cross_section/summary.json` and the notebook's
+conclusions cell. CROSS_SECTION_RESULTS_PLACEHOLDER
+
 ## Provenance of the numbers in the conclusions
 
 Every number in the notebook's conclusions cell, with the cell that produced it (cells are named by

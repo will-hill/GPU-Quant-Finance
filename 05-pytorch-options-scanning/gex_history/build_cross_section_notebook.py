@@ -31,16 +31,16 @@ def conclusions_md():
     if not p.exists():
         return "## Conclusions\n\n(filled after the first execution)\n\nEducational analysis, not a trading strategy."
     s = json.loads(p.read_text())
-    byname, pooled, xs, intr = s["next_day_by_name"], s["pooled_regime_test"], s["cross_sectional_sort"], s["pooled_intraday"]
-    n_above = sum(1 for v in byname.values() if v.get("ratio_neg_over_pos", 0) > 1)
-    n_names = sum(1 for v in byname.values() if "ratio_neg_over_pos" in v)
-    ratios = sorted(v["ratio_neg_over_pos"] for v in byname.values() if "ratio_neg_over_pos" in v)
+    byname, pooled, xs, intr = s["next_day_by_tercile"], s["pooled_tercile_test"], s["cross_sectional_sort"], s["pooled_intraday"]
+    n_above = sum(1 for v in byname.values() if v.get("ratio_bottom_over_top", 0) > 1)
+    n_names = sum(1 for v in byname.values() if "ratio_bottom_over_top" in v)
+    ratios = sorted(v["ratio_bottom_over_top"] for v in byname.values() if "ratio_bottom_over_top" in v)
     med = ratios[len(ratios) // 2]
     bins = sorted(xs.items(), key=lambda kv: int(float(kv[0])))
     lo, hi = bins[0][1], bins[-1][1]
     f = intr["flip_vs_same"]
     lines = ["## Conclusions", "",
-             f"1. The SPY regime result generalizes: the next-day range after a negative-GEX close exceeds the range after a positive close in {n_above} of {n_names} names, median ratio {med:.2f}. Pooled over {pooled['n_names']} names and {pooled['n_pos'] + pooled['n_neg']} name-days, the next-day range relative to the name's own trailing mean is {pooled['range_rel_pos']:.3f} after positive GEX against {pooled['range_rel_neg']:.3f} after negative, difference {pooled['diff']:+.3f} with 95% CI [{pooled['ci_lo']:+.3f}, {pooled['ci_hi']:+.3f}], p = {pooled['p_mwu']:.1e}.",
+             f"1. The SPY result generalizes as a level effect: in {n_above} of {n_names} names the next-day range (relative to the name's own trailing mean) is wider in the bottom third of the name's GEX than in the top third, median ratio {med:.2f}. Pooled over {pooled['n_names']} names and {pooled['n_bottom'] + pooled['n_top']} name-days, bottom third {pooled['range_rel_bottom']:.3f} against top third {pooled['range_rel_top']:.3f}, difference {pooled['diff']:+.3f} with 95% CI [{pooled['ci_lo']:+.3f}, {pooled['ci_hi']:+.3f}], p = {pooled['p_mwu']:.1e}. Single-name books are call-heavy and rarely negative, so the sign itself is rarely the cut.",
              f"2. The cross-sectional ranking works: sorting names each day by net GEX per dollar traded, the most negative bin has a next-day relative range of {lo['range_rel_next']:.3f} and the most positive bin {hi['range_rel_next']:.3f}.",
              f"3. Re-marking tracks the next print in every name: mean sign agreement with the next official GEX {intr['t6_mean']['sign_agreement_remark']:.1%} for the re-marked book against {intr['t6_mean']['sign_agreement_stale']:.1%} for the stale print, level correlation {intr['t6_mean']['corr_level_remark']:.2f} against {intr['t6_mean']['corr_level_stale']:.2f}.",
              f"4. Pooled over {intr['n_names']} names and {intr['n_buckets']} half-hour buckets, the re-mark predicts the next bucket's range better than the stale value (Spearman on within-name ranks {intr['spearman_remark']:+.2f} against {intr['spearman_stale']:+.2f}); a re-marked sign that left the prior close's sign appears on {intr['share_days_with_flip']:.0%} of name-days, and after such a flip from negative to positive the next bucket's adjusted range is {f['prev_negative_flipped_positive']['next_range_adj_flipped']:.2f} against {f['prev_negative_flipped_positive']['next_range_adj_same']:.2f} when the sign held (CI of the difference [{f['prev_negative_flipped_positive']['ci_lo']:+.2f}, {f['prev_negative_flipped_positive']['ci_hi']:+.2f}]); from positive to negative {f['prev_positive_flipped_negative']['next_range_adj_flipped']:.2f} against {f['prev_positive_flipped_negative']['next_range_adj_same']:.2f} (CI [{f['prev_positive_flipped_negative']['ci_lo']:+.2f}, {f['prev_positive_flipped_negative']['ci_hi']:+.2f}]).",
@@ -99,8 +99,18 @@ Within each name: mean next-day range after a positive-GEX close against after a
 
 code("""
 names = list(summary.index.str.lower())
+bytercile = X.next_day_by_tercile(names)
+_ = X.fig_tercile_by_name(bytercile, G.FIGURES / "f11_tercile_by_name.png")
+bytercile.style.format({"share_negative": "{:.0%}", "gex_bottom_third_max_bn": "{:+.2f}", "gex_top_third_min_bn": "{:+.2f}", "range_rel_bottom": "{:.3f}",
+                        "range_rel_top": "{:.3f}", "ratio_bottom_over_top": "{:.2f}", "absret_bottom": "{:.2%}", "absret_top": "{:.2%}", "p_mwu": "{:.3f}"})
+""")
+
+md("""
+Single names are call-heavy books that rarely turn negative, so the sign cut leaves few negative days; the table above uses each name's own GEX terciles. The sign cut is shown next for completeness, then the pooled tests.
+""")
+
+code("""
 byname = X.next_day_by_regime(names)
-_ = X.fig_ratio_by_name(byname, G.FIGURES / "f11_ratio_by_name.png")
 byname.style.format({"share_negative": "{:.0%}", "range_next_pos": "{:.2%}", "range_next_neg": "{:.2%}", "ratio_neg_over_pos": "{:.2f}",
                      "range_rel_pos": "{:.3f}", "range_rel_neg": "{:.3f}", "absret_next_pos": "{:.2%}", "absret_next_neg": "{:.2%}", "p_mwu_range": "{:.3f}"})
 """)
@@ -109,7 +119,9 @@ code("""
 panel = X.pooled_panel(names)
 panel = panel[panel.index >= "2025-09-15"]
 pooled = X.pooled_regime_test(panel)
-print(json.dumps(pooled, indent=1))
+pooled_t = X.pooled_tercile_test(panel)
+print("sign cut:", json.dumps(pooled, indent=1))
+print("tercile cut:", json.dumps(pooled_t, indent=1))
 xs = X.cross_sectional_sort(panel, key="gex_per_dv", n_bins=5)
 _ = X.fig_xs_sort(xs, "net GEX per dollar of 20-day average traded value", G.FIGURES / "f12_cross_sectional_sort.png")
 xs.style.format({"range_rel_next": "{:.3f}", "absret_next": "{:.2%}", "ret_next": "{:+.3%}", "key_median": "{:.2e}", "share_negative": "{:.0%}"})
@@ -133,7 +145,8 @@ pd.DataFrame(pooled_intra["t6_by_name"]).T.style.format("{:.3f}")
 """)
 
 code("""
-G.save_json({"symbols": names, "next_day_by_name": byname.to_dict("index"), "pooled_regime_test": pooled,
+G.save_json({"symbols": names, "next_day_by_name": byname.to_dict("index"), "next_day_by_tercile": bytercile.to_dict("index"),
+             "pooled_regime_test": pooled, "pooled_tercile_test": pooled_t,
              "cross_sectional_sort": {str(k): v for k, v in xs.to_dict("index").items()},
              "pooled_intraday": {k: v for k, v in pooled_intra.items()}}, X.XS / "summary.json")
 print("wrote", X.XS / "summary.json")

@@ -199,7 +199,7 @@ def main():
     if args.intraday:
         t0 = time.perf_counter()
         mtasks = [(s, a, b) for s in syms for a, b in month_chunks(args.start, args.end)]
-        with ThreadPoolExecutor(max_workers=4) as ex:
+        with ThreadPoolExecutor(max_workers=args.workers) as ex:
             mrecs = list(ex.map(pull_month, mtasks))
         bad = [r for r in mrecs if r["status"] not in ("ok", "cached")]
         intraday = {"tasks": len(mtasks), "ok": len(mtasks) - len(bad), "problems": [(r["sym"], r["month"], r["error"] or r["status"]) for r in bad],

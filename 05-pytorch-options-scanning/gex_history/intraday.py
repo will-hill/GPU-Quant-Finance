@@ -511,3 +511,176 @@ def fig_wall_touches(t4: dict, path=None):
     if path:
         fig.savefig(path, bbox_inches="tight", pad_inches=0.25)
     return fig
+
+
+# ----------------------------------------------------------------------------- the 0DTE layer
+def zero_dte_layer(sol: pd.DataFrame, daily: pd.DataFrame, ob: pd.DataFrame, symbol: str = "spy", band: float = 0.03, minutes: int = 30) -> pd.DataFrame:
+    """Same-day-expiry contracts re-marked intraday with the true remaining time.
+
+    For day D: open interest from the OI file dated D (positions as of the D-1 close, the freshest
+    available during D), IV from the D-1 solve of the same contracts (1 day to expiry then); strikes
+    without a solved IV take the nearest solved strike of the same right within `band` of the prior
+    close. Gamma at each bucket close with T = time to 16:00. Returns per (date, bucket): signed
+    net 0DTE GEX, unsigned 0DTE gamma exposure, the standing-book re-mark, and the max-exposure strike.
+    Positions opened during D are invisible (OI is once a day), so this is a lower bound on 0DTE gamma."""
+    from alo_numba import Engine, style_codes
+    sym = symbol.lower()
+    days = list(daily.index)
+    prev = {days[i]: days[i - 1] for i in range(1, len(days))}
+    rows = []
+    for d in days[1:]:
+        dp = prev[d]
+        oi = pl.read_parquet(G.CACHE / f"{sym}_oi_{d.date()}.parquet").filter(pl.col("expiration") == str(d.date())).with_columns(pl.col("right").str.slice(0, 1))
+        oi = oi.sort("timestamp").unique(subset=["strike", "right"], keep="last").select("strike", "right", "open_interest").to_pandas()
+        oi = oi[oi["open_interest"] > 0]
+        if oi.empty:
+            continue
+        iv = sol[(sol["date"] == dp) & (sol["expiration"] == str(d.date())) & (sol["iv_status"] == 0)][["strike", "right", "iv", "r", "q"]]
+        if iv.empty:
+            continue
+        S0 = float(daily.loc[dp, "close"])
+        oi = oi[(oi["strike"] / S0 - 1).abs() <= band]
+        m = oi.merge(iv, on=["strike", "right"], how="left")
+        for right in ("C", "P"):
+            src = iv[iv["right"] == right].sort_values("strike")
+            need = m["iv"].isna() & (m["right"] == right)
+            if need.any() and len(src):
+                idx = np.abs(src["strike"].to_numpy()[None, :] - m.loc[need, "strike"].to_numpy()[:, None]).argmin(axis=1)
+                m.loc[need, "iv"] = src["iv"].to_numpy()[idx]; m.loc[need, "r"] = src["r"].iloc[0]; m.loc[need, "q"] = src["q"].iloc[0]
+        m = m.dropna(subset=["iv"])
+        m["date"] = d
+        rows.append(m)
+    con = pd.concat(rows, ignore_index=True)
+    # cross with the day's bucket closes
+    b = ob[ob["date"].isin(con["date"].unique())][["date", "bucket", "close", "gex_rt", "gex_prev", "regime_prev", "range_adj", "next_range_adj"]]
+    x = con.merge(b, on="date", how="inner")
+    mod_close = 570 + minutes * (x["bucket"].to_numpy() + 1)
+    T = np.maximum((960 - mod_close) / (60.0 * 24.0 * 365.25), 1e-9)      # 0 at the 16:00 print: expired
+    eng = Engine(np.float64, "cpu")
+    is_call = (x["right"] == "C").to_numpy()
+    out = eng.price(x["close"].to_numpy(np.float64), x["strike"].to_numpy(np.float64), x["r"].to_numpy(np.float64), x["q"].to_numpy(np.float64),
+                    x["iv"].to_numpy(np.float64), T, style_codes(is_call, False))
+    x["gamma"] = out[:, 2]
+    x["gex"] = np.where(is_call, 1.0, -1.0) * x["gamma"] * x["open_interest"] * x["close"] ** 2
+    x["ugex"] = x["gamma"] * x["open_interest"] * x["close"] ** 2
+    g = x.groupby(["date", "bucket"])
+    layer = g.agg(gex_0dte=("gex", "sum"), ugex_0dte=("ugex", "sum"), n_0dte=("gex", "size"), gex_rt=("gex_rt", "first"), gex_prev=("gex_prev", "first"),
+                  regime_prev=("regime_prev", "first"), close=("close", "first"), range_adj=("range_adj", "first"), next_range_adj=("next_range_adj", "first")).reset_index()
+    kstar = x.loc[x.groupby(["date", "bucket"])["ugex"].idxmax(), ["date", "bucket", "strike"]].rename(columns={"strike": "k_star_0dte"})
+    layer = layer.merge(kstar, on=["date", "bucket"], how="left")
+    layer["share_0dte_of_book"] = layer["ugex_0dte"] / (layer["ugex_0dte"] + layer["gex_rt"].abs())
+    return layer
+
+
+def t8_zero_dte(layer: pd.DataFrame) -> dict:
+    """(a) how big the 0DTE layer is against the standing book by time of day; (b) does adding it improve the
+    next-bucket range prediction; (c) the last half hour: range of the 15:30 to 16:00 bucket by the 0DTE
+    exposure at 15:30 (terciles) within each prior regime."""
+    import statsmodels.api as sm
+    from scipy.stats import mannwhitneyu, spearmanr
+    d = layer.dropna(subset=["gex_rt"]).copy()
+    out = {"n_day_buckets": int(len(d)), "n_days": int(d["date"].nunique()), "median_contracts_per_day": float(d.groupby("date")["n_0dte"].first().median())}
+    by_b = d.groupby("bucket").agg(ugex_0dte_bn=("ugex_0dte", lambda v: float(np.median(v) / 1e9)), book_abs_bn=("gex_rt", lambda v: float(np.median(np.abs(v)) / 1e9)),
+                                   share_0dte=("share_0dte_of_book", "median"), net_0dte_positive_share=("gex_0dte", lambda v: float((v > 0).mean())))
+    out["by_bucket"] = by_b.round(4).reset_index().to_dict("records")
+    dd = d.dropna(subset=["next_range_adj"])
+    dd = dd[dd["bucket"] < 12]
+    out["spearman_next_range"] = {"stale": float(spearmanr(dd["gex_prev"], dd["next_range_adj"]).correlation),
+                                  "remark": float(spearmanr(dd["gex_rt"], dd["next_range_adj"]).correlation),
+                                  "remark_plus_0dte_signed": float(spearmanr(dd["gex_rt"] + dd["gex_0dte"], dd["next_range_adj"]).correlation),
+                                  "unsigned_0dte_alone": float(spearmanr(dd["ugex_0dte"], dd["next_range_adj"]).correlation),
+                                  "signed_0dte_alone": float(spearmanr(dd["gex_0dte"], dd["next_range_adj"]).correlation)}
+    X = sm.add_constant(pd.DataFrame({"remark_rank": dd["gex_rt"].rank(pct=True), "u0dte_rank": dd["ugex_0dte"].rank(pct=True), "s0dte_rank": dd["gex_0dte"].rank(pct=True)}))
+    fit = sm.OLS(dd["next_range_adj"].to_numpy(), X).fit(cov_type="cluster", cov_kwds={"groups": pd.factorize(dd["date"])[0]})
+    out["joint_regression_t"] = {k: float(v) for k, v in fit.tvalues.items() if k != "const"}
+    out["joint_regression_coef"] = {k: float(v) for k, v in fit.params.items() if k != "const"}
+    last = d[d["bucket"] == 11].dropna(subset=["next_range_adj"])          # 15:00-15:30 close -> outcome is the 15:30-16:00 bucket
+    res = {}
+    for reg, lab in ((1, "prev_positive"), (-1, "prev_negative"), (0, "all")):
+        m = last if reg == 0 else last[last["regime_prev"] == reg]
+        if len(m) < 30:
+            continue
+        q = pd.qcut(m["ugex_0dte"].rank(method="first"), 3, labels=False)
+        lo_, hi_ = m.loc[q == 0, "next_range_adj"].to_numpy(), m.loc[q == 2, "next_range_adj"].to_numpy()
+        ci = boot_diff(hi_, lo_)
+        res[lab] = {"n": int(len(m)), "last_half_hour_range_adj_low_0dte": float(lo_.mean()), "high_0dte": float(hi_.mean()), "diff_high_minus_low": float(hi_.mean() - lo_.mean()),
+                    "ci_lo": ci[0], "ci_hi": ci[1], "p_mwu": float(mannwhitneyu(hi_, lo_).pvalue),
+                    "spearman_ugex_vs_last_range": float(spearmanr(m["ugex_0dte"], m["next_range_adj"]).correlation),
+                    "spearman_signed_vs_last_range": float(spearmanr(m["gex_0dte"], m["next_range_adj"]).correlation)}
+    out["last_half_hour_by_0dte_exposure_at_1530"] = res
+    return out
+
+
+def t8_controls(layer: pd.DataFrame, sol: pd.DataFrame, daily: pd.DataFrame, symbol: str = "spy") -> dict:
+    """Controls for the last-half-hour result: (a) the day's own realized range so far (mean adjusted range of
+    buckets 0..11) and the prior regime in a joint rank regression; (b) how much same-day OI was added on the
+    day before expiry (OI dated D over OI dated D-1 for the same expiry), the part of 0DTE positioning the
+    once-a-day OI does see."""
+    import statsmodels.api as sm
+    d = layer.dropna(subset=["gex_rt"]).copy()
+    day_sofar = d[d["bucket"] <= 11].groupby("date")["range_adj"].mean().rename("range_sofar")
+    last = d[d["bucket"] == 11].dropna(subset=["next_range_adj"]).merge(day_sofar, left_on="date", right_index=True)
+    X = pd.DataFrame({"u0dte_rank": last["ugex_0dte"].rank(pct=True), "range_sofar_rank": last["range_sofar"].rank(pct=True),
+                      "book_rank": last["gex_rt"].rank(pct=True), "prev_negative": (last["regime_prev"] < 0).astype(float)})
+    fit = sm.OLS(last["next_range_adj"].to_numpy(), sm.add_constant(X)).fit(cov_type="HC1")
+    out = {"n_days": int(len(last)), "last_half_hour_controlled_t": {k: float(v) for k, v in fit.tvalues.items() if k != "const"},
+           "last_half_hour_controlled_coef": {k: float(v) for k, v in fit.params.items() if k != "const"}, "r2": float(fit.rsquared)}
+    # within-day-vol strata: terciles of range so far, then high vs low 0DTE exposure inside each stratum
+    strata = {}
+    q_sofar = pd.qcut(last["range_sofar"].rank(method="first"), 3, labels=["calm so far", "middle", "wide so far"])
+    for lab in ("calm so far", "middle", "wide so far"):
+        m = last[q_sofar == lab]
+        q = pd.qcut(m["ugex_0dte"].rank(method="first"), 3, labels=False)
+        lo_, hi_ = m.loc[q == 0, "next_range_adj"].to_numpy(), m.loc[q == 2, "next_range_adj"].to_numpy()
+        ci = boot_diff(hi_, lo_)
+        strata[lab] = {"n": int(len(m)), "low_0dte": float(lo_.mean()), "high_0dte": float(hi_.mean()), "diff": float(hi_.mean() - lo_.mean()), "ci_lo": ci[0], "ci_hi": ci[1]}
+    out["last_half_hour_within_day_vol_strata"] = strata
+    # OI added on the last day before expiry
+    sym = symbol.lower()
+    days = list(daily.index)
+    ratios = []
+    for i in range(1, len(days)):
+        d0, dp = days[i], days[i - 1]
+        try:
+            a = pl.read_parquet(G.CACHE / f"{sym}_oi_{d0.date()}.parquet").filter(pl.col("expiration") == str(d0.date()))["open_interest"].sum()
+            b = pl.read_parquet(G.CACHE / f"{sym}_oi_{dp.date()}.parquet").filter(pl.col("expiration") == str(d0.date()))["open_interest"].sum()
+        except Exception:  # noqa: BLE001
+            continue
+        if b and a:
+            ratios.append(a / b)
+    r = np.array(ratios)
+    out["same_day_expiry_oi_growth_on_last_day"] = {"n_days": int(len(r)), "median_ratio_D_over_Dminus1": float(np.median(r)), "p25": float(np.percentile(r, 25)), "p75": float(np.percentile(r, 75))}
+    return out
+
+
+def fig_zero_dte(t8: dict, path=None):
+    import matplotlib.pyplot as plt
+    G.style()
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(9.6, 4.6), gridspec_kw={"wspace": 0.34})
+    bb = pd.DataFrame(t8["by_bucket"]).set_index("bucket")
+    bb = bb[bb.index < 12]
+    labels = [f"{(570 + 30 * int(b) + 30) // 60:02d}:{(570 + 30 * int(b) + 30) % 60:02d}" for b in bb.index]
+    ax1.plot(bb.index, bb["ugex_0dte_bn"], marker="o", color=G.PURPLE, lw=2.0, label="same-day expiry, unsigned gamma exposure")
+    ax1.plot(bb.index, bb["book_abs_bn"], marker="o", color=G.DIM, lw=2.0, label="standing book, abs net GEX (re-marked)")
+    ax1.set_xticks(bb.index[::2]); ax1.set_xticklabels(labels[::2], fontsize=9)
+    ax1.set_ylabel("median across days, $bn per 1% move")
+    ax1.set_xlabel("bucket close, ET")
+    ax1.set_title("0DTE layer against the standing book", loc="left", fontsize=14, pad=20)
+    ax1.text(0.0, 1.01, f"median share of same-day expiry in total unsigned exposure {bb['share_0dte'].median():.0%}, positions as of the prior close only", transform=ax1.transAxes, va="bottom", color=G.DIM, fontsize=8.5)
+    ax1.set_ylim(0, max(bb["ugex_0dte_bn"].max(), bb["book_abs_bn"].max()) * 1.35)
+    ax1.legend(loc="upper right", fontsize=8.5)
+    r = t8["last_half_hour_by_0dte_exposure_at_1530"]
+    keys = [("all", "all days"), ("prev_positive", "prior regime positive"), ("prev_negative", "prior regime negative")]
+    xs = np.arange(len(keys)); w = 0.36
+    ax2.bar(xs - w / 2, [r[k]["last_half_hour_range_adj_low_0dte"] for k, _ in keys], width=w, color=G.DIM2, lw=0, label="bottom third of 0DTE exposure at 15:30")
+    ax2.bar(xs + w / 2, [r[k]["high_0dte"] for k, _ in keys], width=w, color=G.PURPLE, lw=0, label="top third")
+    for i, (k, _) in enumerate(keys):
+        ax2.text(i, max(r[k]["last_half_hour_range_adj_low_0dte"], r[k]["high_0dte"]) + 0.05, f"diff {r[k]['diff_high_minus_low']:+.2f}\nCI [{r[k]['ci_lo']:+.2f}, {r[k]['ci_hi']:+.2f}]", ha="center", va="bottom", color=G.FG, fontsize=8.5)
+    ax2.set_xticks(xs); ax2.set_xticklabels([f"{lab}\nn = {r[k]['n']}" for k, lab in (("all", "all days"), ("prev_positive", "prior +"), ("prev_negative", "prior -"))], fontsize=9)
+    ax2.set_ylabel("15:30 to 16:00 range, multiple of median")
+    ax2.set_title("0DTE gamma and the last half hour", loc="left", fontsize=14, pad=20)
+    ax2.set_ylim(0, max(max(r[k]["last_half_hour_range_adj_low_0dte"], r[k]["high_0dte"]) for k, _ in keys) * 1.6)
+    ax2.legend(loc="upper right", fontsize=8.5)
+    if path:
+        fig.savefig(path, bbox_inches="tight", pad_inches=0.25)
+    return fig
