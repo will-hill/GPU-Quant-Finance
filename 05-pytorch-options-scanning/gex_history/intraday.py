@@ -1,7 +1,7 @@
 """Intraday value-of-real-time tests for the GEX series. Reads the cache only; no network.
 
-The real-time quantity a scanner produces is the previous close's book re-marked at the current
-spot (open interest arrives once a day). These helpers build that re-mark from the daily profile
+The real-time quantity a scanner produces is the previous close's book evaluated at the current
+spot, the live book (open interest arrives once a day). These helpers build that live book from the daily profile
 on a spot grid and test it against the 1-minute bars.
 """
 from __future__ import annotations
@@ -48,8 +48,8 @@ def daily_profiles(sol: pd.DataFrame, rel: np.ndarray = REL, chunk_days: int = 2
     return pd.DataFrame(np.vstack(rows), index=pd.DatetimeIndex(idx, name="date"), columns=rel)
 
 
-def remark(profiles: pd.DataFrame, S0: float, day_prev, spot) -> np.ndarray:
-    """Re-marked net GEX at spot(s), from the profile of day_prev whose close was S0. Linear on the grid, clipped."""
+def live_gex(profiles: pd.DataFrame, S0: float, day_prev, spot) -> np.ndarray:
+    """Live net GEX at spot(s), from the profile of day_prev whose close was S0. Linear on the grid, clipped."""
     prof = profiles.loc[day_prev].to_numpy()
     rel = np.clip(np.asarray(spot, dtype=float) / S0, profiles.columns[0], profiles.columns[-1])
     return np.interp(rel, profiles.columns.to_numpy(dtype=float), prof)
@@ -86,7 +86,7 @@ def bucketize(bars: pl.DataFrame, minutes: int) -> pd.DataFrame:
 
 
 def attach_regime(b: pd.DataFrame, daily: pd.DataFrame, profiles: pd.DataFrame | None) -> pd.DataFrame:
-    """Add the previous close's regime, GEX, walls, flip, S0, and the re-marked GEX at each bucket close."""
+    """Add the previous close's regime, GEX, walls, flip, S0, and the live GEX at each bucket close."""
     prev = daily[["gex_net_usd", "regime", "close", "flip_level", "wall_pos_strike", "wall_neg_strike"]].shift(1)
     prev.columns = ["gex_prev", "regime_prev", "S0", "flip_prev", "wall_pos_prev", "wall_neg_prev"]
     prev["date_prev"] = pd.Series(daily.index, index=daily.index).shift(1)
@@ -95,9 +95,9 @@ def attach_regime(b: pd.DataFrame, daily: pd.DataFrame, profiles: pd.DataFrame |
         vals = np.full(len(out), np.nan)
         for dprev, g in out.groupby("date_prev"):
             if dprev in profiles.index:
-                vals[g.index.to_numpy() if False else np.where(out["date_prev"].to_numpy() == dprev)[0]] = remark(profiles, float(g["S0"].iloc[0]), dprev, g["close"].to_numpy())
-        out["gex_rt"] = vals
-        out["regime_rt"] = np.sign(out["gex_rt"])
+                vals[g.index.to_numpy() if False else np.where(out["date_prev"].to_numpy() == dprev)[0]] = live_gex(profiles, float(g["S0"].iloc[0]), dprev, g["close"].to_numpy())
+        out["gex_live"] = vals
+        out["regime_live"] = np.sign(out["gex_live"])
     out["range_b"] = (out["high"] - out["low"]) / out["S0"]
     out["absret_b"] = out["ret"].abs()
     med = out.groupby("bucket")["range_b"].transform("median")
@@ -131,8 +131,8 @@ def t1_intraday_vol(bars: pl.DataFrame, daily: pd.DataFrame, horizons=(5, 15, 30
     return pd.DataFrame(rows).set_index("horizon_min")
 
 
-def t6_remark_tracks_next_print(daily: pd.DataFrame, profiles: pd.DataFrame) -> dict:
-    """At the close of D: does the D-1 book re-marked at S_D predict the official GEX of D (new OI, new IV)
+def t6_live_tracks_next_print(daily: pd.DataFrame, profiles: pd.DataFrame) -> dict:
+    """At the close of D: does the D-1 book evaluated at S_D predict the official GEX of D (new OI, new IV)
     better than the stale D-1 value?"""
     d = daily.copy()
     d["S0"] = d["close"].shift(1); d["gex_prev"] = d["gex_net_usd"].shift(1)
@@ -140,38 +140,38 @@ def t6_remark_tracks_next_print(daily: pd.DataFrame, profiles: pd.DataFrame) -> 
     rt = np.full(len(d), np.nan)
     for i, (dt_, row) in enumerate(d.iterrows()):
         if pd.notna(row["date_prev"]) and row["date_prev"] in profiles.index:
-            rt[i] = remark(profiles, row["S0"], row["date_prev"], row["close"])[()]
-    d["gex_rt_close"] = rt
-    d = d.dropna(subset=["gex_rt_close", "gex_prev"])
+            rt[i] = live_gex(profiles, row["S0"], row["date_prev"], row["close"])[()]
+    d["gex_live_close"] = rt
+    d = d.dropna(subset=["gex_live_close", "gex_prev"])
     truth = np.sign(d["gex_net_usd"])
     out = {"n_days": int(len(d)),
            "sign_agreement_stale": float((np.sign(d["gex_prev"]) == truth).mean()),
-           "sign_agreement_remark": float((np.sign(d["gex_rt_close"]) == truth).mean()),
+           "sign_agreement_live": float((np.sign(d["gex_live_close"]) == truth).mean()),
            "corr_level_stale": float(np.corrcoef(d["gex_prev"], d["gex_net_usd"])[0, 1]),
-           "corr_level_remark": float(np.corrcoef(d["gex_rt_close"], d["gex_net_usd"])[0, 1]),
+           "corr_level_live": float(np.corrcoef(d["gex_live_close"], d["gex_net_usd"])[0, 1]),
            "mad_stale_bn": float((d["gex_prev"] - d["gex_net_usd"]).abs().median() / 1e9),
-           "mad_remark_bn": float((d["gex_rt_close"] - d["gex_net_usd"]).abs().median() / 1e9),
+           "mad_live_bn": float((d["gex_live_close"] - d["gex_net_usd"]).abs().median() / 1e9),
            "days_sign_changed": int((np.sign(d["gex_prev"]) != truth).sum()),
-           "remark_caught_change": float((np.sign(d.loc[np.sign(d["gex_prev"]) != truth, "gex_rt_close"]) == truth[np.sign(d["gex_prev"]) != truth]).mean())}
+           "live_caught_change": float((np.sign(d.loc[np.sign(d["gex_prev"]) != truth, "gex_live_close"]) == truth[np.sign(d["gex_prev"]) != truth]).mean())}
     return out
 
 
-def t2_remark_vs_stale(ob: pd.DataFrame) -> dict:
-    """Bucket level: does the re-marked GEX at the end of bucket b predict the next bucket's (seasonally
+def t2_live_versus_stale(ob: pd.DataFrame) -> dict:
+    """Bucket level: does the live GEX at the end of bucket b predict the next bucket's (seasonally
     adjusted) range better than the stale previous-close GEX? ob = attach_regime(bucketize(bars, 30), ...)."""
     from scipy.stats import mannwhitneyu, spearmanr
-    d = ob.dropna(subset=["next_range_adj", "gex_rt", "gex_prev"]).copy()
+    d = ob.dropna(subset=["next_range_adj", "gex_live", "gex_prev"]).copy()
     out = {"n_buckets": int(len(d)), "n_days": int(d["date"].nunique())}
     out["spearman_stale"] = float(spearmanr(d["gex_prev"], d["next_range_adj"]).correlation)
-    out["spearman_remark"] = float(spearmanr(d["gex_rt"], d["next_range_adj"]).correlation)
-    # within-day increment: the part of the re-mark that the stale value does not have
-    d["d_gex"] = d["gex_rt"] - d["gex_prev"]
+    out["spearman_live"] = float(spearmanr(d["gex_live"], d["next_range_adj"]).correlation)
+    # within-day increment: the part of the live value that the stale value does not have
+    d["d_gex"] = d["gex_live"] - d["gex_prev"]
     d["resid_next"] = d["next_range_adj"] - d.groupby("date")["next_range_adj"].transform("mean")
     out["spearman_increment_within_day"] = float(spearmanr(d["d_gex"], d["resid_next"]).correlation)
     # sign flips inside the day
-    flipped = d["regime_rt"] != d["regime_prev"]
+    flipped = d["regime_live"] != d["regime_prev"]
     out["share_buckets_flipped"] = float(flipped.mean())
-    out["share_days_with_any_flip"] = float(d.groupby("date").apply(lambda g: (g["regime_rt"] != g["regime_prev"]).any()).mean())
+    out["share_days_with_any_flip"] = float(d.groupby("date").apply(lambda g: (g["regime_live"] != g["regime_prev"]).any()).mean())
     res = {}
     for reg, lab in ((-1, "prev_negative"), (1, "prev_positive")):
         m = d["regime_prev"] == reg
@@ -185,15 +185,15 @@ def t2_remark_vs_stale(ob: pd.DataFrame) -> dict:
 
 
 def t3_intraday_flips(ob: pd.DataFrame) -> dict:
-    """Day level: first bucket where the re-marked sign differs from the previous close's sign. Post-flip mean
+    """Day level: first bucket where the live sign differs from the previous close's sign. Post-flip mean
     adjusted range on flip days against no-flip days with the same prior regime over the same buckets,
     unmatched and matched on the size of the move to the flip bucket (tercile within regime and bucket)."""
-    d = ob.dropna(subset=["gex_rt"]).copy()
+    d = ob.dropna(subset=["gex_live"]).copy()
     d["move"] = (d["close"] / d["S0"] - 1.0).abs()
     days = []
     for dt_, g in d.groupby("date"):
         g = g.sort_values("bucket")
-        fl = g.index[g["regime_rt"] != g["regime_prev"]]
+        fl = g.index[g["regime_live"] != g["regime_prev"]]
         k = int(g.loc[fl[0], "bucket"]) if len(fl) else None
         days.append({"date": dt_, "regime_prev": int(g["regime_prev"].iloc[0]), "flip_bucket": k,
                      "move_at_flip": float(g.loc[fl[0], "move"]) if len(fl) else np.nan})
@@ -299,9 +299,9 @@ def t3b_near_flip(ob: pd.DataFrame, days: pd.DataFrame, near_pct: float = 0.5) -
     flip level (the stale print already says 'near the boundary'), compare the rest-of-day adjusted range
     on days that crossed intraday against days that did not, over the same buckets after the median
     flip bucket of the crossers. Also a joint rank regression of the next bucket's range on the stale
-    and re-marked GEX."""
+    and live GEX."""
     import statsmodels.api as sm
-    d = ob.dropna(subset=["gex_rt"]).copy()
+    d = ob.dropna(subset=["gex_live"]).copy()
     dist0 = ((d.groupby("date")["S0"].first() / d.groupby("date")["flip_prev"].first()) - 1.0).abs() * 100.0
     near = dist0[dist0 <= near_pct].index
     out = {"near_pct": near_pct, "n_near_days": int(len(near)), "n_days": int(dist0.notna().sum())}
@@ -321,17 +321,17 @@ def t3b_near_flip(ob: pd.DataFrame, days: pd.DataFrame, near_pct: float = 0.5) -
         else:
             res[lab] = {"n_cross": int(len(a)), "n_stay": int(len(b))}
     out["near_flip_cross_vs_stay"] = res
-    # joint regression on ranks (pooled buckets): next_range_adj ~ rank(gex_prev) + rank(gex_rt)
-    dd = d.dropna(subset=["next_range_adj", "gex_prev", "gex_rt"])
-    X = pd.DataFrame({"stale_rank": dd["gex_prev"].rank(pct=True), "remark_rank": dd["gex_rt"].rank(pct=True)})
+    # joint regression on ranks (pooled buckets): next_range_adj ~ rank(gex_prev) + rank(gex_live)
+    dd = d.dropna(subset=["next_range_adj", "gex_prev", "gex_live"])
+    X = pd.DataFrame({"stale_rank": dd["gex_prev"].rank(pct=True), "live_rank": dd["gex_live"].rank(pct=True)})
     X = sm.add_constant(X)
     fit = sm.OLS(dd["next_range_adj"].to_numpy(), X).fit(cov_type="cluster", cov_kwds={"groups": pd.factorize(dd["date"])[0]})
     out["joint_regression"] = {"coef_stale": float(fit.params["stale_rank"]), "t_stale": float(fit.tvalues["stale_rank"]),
-                               "coef_remark": float(fit.params["remark_rank"]), "t_remark": float(fit.tvalues["remark_rank"]),
+                               "coef_live": float(fit.params["live_rank"]), "t_live": float(fit.tvalues["live_rank"]),
                                "r2": float(fit.rsquared), "n": int(fit.nobs), "se_clustered_by_day": True}
     fit1 = sm.OLS(dd["next_range_adj"].to_numpy(), sm.add_constant(X[["stale_rank"]])).fit()
-    fit2 = sm.OLS(dd["next_range_adj"].to_numpy(), sm.add_constant(X[["remark_rank"]])).fit()
-    out["r2_stale_only"] = float(fit1.rsquared); out["r2_remark_only"] = float(fit2.rsquared)
+    fit2 = sm.OLS(dd["next_range_adj"].to_numpy(), sm.add_constant(X[["live_rank"]])).fit()
+    out["r2_stale_only"] = float(fit1.rsquared); out["r2_live_only"] = float(fit2.rsquared)
     return out
 
 
@@ -371,8 +371,8 @@ def t7_model_choice(sol: pd.DataFrame, daily: pd.DataFrame) -> dict:
 
 
 # ----------------------------------------------------------------------------- figures
-def fig_remark_vs_stale(daily: pd.DataFrame, profiles: pd.DataFrame, t6: dict, path=None):
-    """Two scatters against the official next print: stale previous-close GEX and the re-marked book."""
+def fig_live_versus_stale(daily: pd.DataFrame, profiles: pd.DataFrame, t6: dict, path=None):
+    """Two scatters against the official next print: stale previous-close GEX and the live book."""
     import matplotlib.pyplot as plt
     G.style()
     d = daily.copy()
@@ -381,17 +381,17 @@ def fig_remark_vs_stale(daily: pd.DataFrame, profiles: pd.DataFrame, t6: dict, p
     rt = np.full(len(d), np.nan)
     for i, (_, row) in enumerate(d.iterrows()):
         if pd.notna(row["date_prev"]) and row["date_prev"] in profiles.index:
-            rt[i] = remark(profiles, row["S0"], row["date_prev"], row["close"])[()]
-    d["gex_rt"] = rt
-    d = d.dropna(subset=["gex_rt", "gex_prev"])
+            rt[i] = live_gex(profiles, row["S0"], row["date_prev"], row["close"])[()]
+    d["gex_live"] = rt
+    d = d.dropna(subset=["gex_live", "gex_prev"])
     fig, axes = plt.subplots(1, 2, figsize=(9.6, 4.6), gridspec_kw={"wspace": 0.3})
     lim = [d["gex_net_usd"].min() / 1e9 * 1.05, d["gex_net_usd"].max() / 1e9 * 1.05]
     for ax, col, c, title, agree, corr in ((axes[0], "gex_prev", G.DIM, "Stale: yesterday's print", t6["sign_agreement_stale"], t6["corr_level_stale"]),
-                                            (axes[1], "gex_rt", G.CYAN, "Re-marked at today's close", t6["sign_agreement_remark"], t6["corr_level_remark"])):
+                                            (axes[1], "gex_live", G.CYAN, "Live at today's close", t6["sign_agreement_live"], t6["corr_level_live"])):
         ax.plot(lim, lim, color=G.DIM2, lw=1.0, ls="--")
         ax.axhline(0, color=G.DIM2, lw=0.6); ax.axvline(0, color=G.DIM2, lw=0.6)
         ax.scatter(d[col] / 1e9, d["gex_net_usd"] / 1e9, s=10, color=c, alpha=0.65, lw=0)
-        ax.set_xlabel(f"{'stale' if col == 'gex_prev' else 're-marked'} GEX, $bn per 1%")
+        ax.set_xlabel(f"{'stale' if col == 'gex_prev' else 'live'} GEX, $bn per 1%")
         ax.set_ylabel("official GEX at today's close, $bn per 1%")
         ax.set_title(title, loc="left", fontsize=14, pad=20)
         ax.text(0.0, 1.01, f"sign agreement {agree:.1%}   level correlation {corr:.2f}", transform=ax.transAxes, color=G.FG, fontsize=10.5, va="bottom")
@@ -406,7 +406,7 @@ def fig_intraday_flip(ob: pd.DataFrame, days: pd.DataFrame, t3b: dict, path=None
     Right: the near-flip control (days that started within 0.5% of the flip) with bootstrap CIs."""
     import matplotlib.pyplot as plt
     G.style()
-    d = ob.dropna(subset=["gex_rt"])
+    d = ob.dropna(subset=["gex_live"])
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(9.6, 4.6), gridspec_kw={"wspace": 0.36, "width_ratios": [1.3, 1.0]})
     for reg, lab, c in ((-1, "negative at prior close, flipped positive", G.CYAN), (1, "positive at prior close, flipped negative", G.ORANGE)):
         fd = days[(days["regime_prev"] == reg) & days["flip_bucket"].notna()]
@@ -439,10 +439,10 @@ def fig_intraday_flip(ob: pd.DataFrame, days: pd.DataFrame, t3b: dict, path=None
     ax2.set_xticks(xs); ax2.set_xticklabels(labels, fontsize=9)
     ax2.set_ylabel("rest-of-day range, multiple of median")
     ax2.set_title(f"Started within {t3b['near_pct']}% of the flip", loc="left", fontsize=14, pad=30)
-    ax2.text(0.0, 1.01, "crossed: re-marked sign flipped intraday\nstayed: it did not", transform=ax2.transAxes, va="bottom", color=G.DIM, fontsize=8.5)
+    ax2.text(0.0, 1.01, "crossed: live sign flipped intraday\nstayed: it did not", transform=ax2.transAxes, va="bottom", color=G.DIM, fontsize=8.5)
     for key, i in (("neg_to_pos", 0.5), ("pos_to_neg", 2.5)):
         x = r[key]
-        ax2.text(i, max(vals) * 1.04, f"diff {x['diff']:+.2f}\nCI [{x['ci_lo']:+.2f}, {x['ci_hi']:+.2f}]", ha="center", va="bottom", color=G.FG, fontsize=9)
+        ax2.text(i, max(vals) * 1.04, f"difference {x['diff']:+.2f}\nCI [{x['ci_lo']:+.2f}, {x['ci_hi']:+.2f}]", ha="center", va="bottom", color=G.FG, fontsize=9)
     ax2.set_ylim(0, max(vals) * 1.3)
     if path:
         fig.savefig(path, bbox_inches="tight", pad_inches=0.25)
@@ -515,13 +515,13 @@ def fig_wall_touches(t4: dict, path=None):
 
 # ----------------------------------------------------------------------------- the 0DTE layer
 def zero_dte_layer(sol: pd.DataFrame, daily: pd.DataFrame, ob: pd.DataFrame, symbol: str = "spy", band: float = 0.03, minutes: int = 30) -> pd.DataFrame:
-    """Same-day-expiry contracts re-marked intraday with the true remaining time.
+    """Same-day-expiry contracts evaluated intraday with the true remaining time.
 
     For day D: open interest from the OI file dated D (positions as of the D-1 close, the freshest
     available during D), IV from the D-1 solve of the same contracts (1 day to expiry then); strikes
     without a solved IV take the nearest solved strike of the same right within `band` of the prior
     close. Gamma at each bucket close with T = time to 16:00. Returns per (date, bucket): signed
-    net 0DTE GEX, unsigned 0DTE gamma exposure, the standing-book re-mark, and the max-exposure strike.
+    net 0DTE GEX, unsigned 0DTE gamma exposure, the standing-book live value, and the max-exposure strike.
     Positions opened during D are invisible (OI is once a day), so this is a lower bound on 0DTE gamma."""
     from alo_numba import Engine, style_codes
     sym = symbol.lower()
@@ -552,7 +552,7 @@ def zero_dte_layer(sol: pd.DataFrame, daily: pd.DataFrame, ob: pd.DataFrame, sym
         rows.append(m)
     con = pd.concat(rows, ignore_index=True)
     # cross with the day's bucket closes
-    b = ob[ob["date"].isin(con["date"].unique())][["date", "bucket", "close", "gex_rt", "gex_prev", "regime_prev", "range_adj", "next_range_adj"]]
+    b = ob[ob["date"].isin(con["date"].unique())][["date", "bucket", "close", "gex_live", "gex_prev", "regime_prev", "range_adj", "next_range_adj"]]
     x = con.merge(b, on="date", how="inner")
     mod_close = 570 + minutes * (x["bucket"].to_numpy() + 1)
     T = np.maximum((960 - mod_close) / (60.0 * 24.0 * 365.25), 1e-9)      # 0 at the 16:00 print: expired
@@ -564,11 +564,11 @@ def zero_dte_layer(sol: pd.DataFrame, daily: pd.DataFrame, ob: pd.DataFrame, sym
     x["gex"] = np.where(is_call, 1.0, -1.0) * x["gamma"] * x["open_interest"] * x["close"] ** 2
     x["ugex"] = x["gamma"] * x["open_interest"] * x["close"] ** 2
     g = x.groupby(["date", "bucket"])
-    layer = g.agg(gex_0dte=("gex", "sum"), ugex_0dte=("ugex", "sum"), n_0dte=("gex", "size"), gex_rt=("gex_rt", "first"), gex_prev=("gex_prev", "first"),
+    layer = g.agg(gex_0dte=("gex", "sum"), ugex_0dte=("ugex", "sum"), n_0dte=("gex", "size"), gex_live=("gex_live", "first"), gex_prev=("gex_prev", "first"),
                   regime_prev=("regime_prev", "first"), close=("close", "first"), range_adj=("range_adj", "first"), next_range_adj=("next_range_adj", "first")).reset_index()
     kstar = x.loc[x.groupby(["date", "bucket"])["ugex"].idxmax(), ["date", "bucket", "strike"]].rename(columns={"strike": "k_star_0dte"})
     layer = layer.merge(kstar, on=["date", "bucket"], how="left")
-    layer["share_0dte_of_book"] = layer["ugex_0dte"] / (layer["ugex_0dte"] + layer["gex_rt"].abs())
+    layer["share_0dte_of_book"] = layer["ugex_0dte"] / (layer["ugex_0dte"] + layer["gex_live"].abs())
     return layer
 
 
@@ -578,19 +578,19 @@ def t8_zero_dte(layer: pd.DataFrame) -> dict:
     exposure at 15:30 (terciles) within each prior regime."""
     import statsmodels.api as sm
     from scipy.stats import mannwhitneyu, spearmanr
-    d = layer.dropna(subset=["gex_rt"]).copy()
+    d = layer.dropna(subset=["gex_live"]).copy()
     out = {"n_day_buckets": int(len(d)), "n_days": int(d["date"].nunique()), "median_contracts_per_day": float(d.groupby("date")["n_0dte"].first().median())}
-    by_b = d.groupby("bucket").agg(ugex_0dte_bn=("ugex_0dte", lambda v: float(np.median(v) / 1e9)), book_abs_bn=("gex_rt", lambda v: float(np.median(np.abs(v)) / 1e9)),
+    by_b = d.groupby("bucket").agg(ugex_0dte_bn=("ugex_0dte", lambda v: float(np.median(v) / 1e9)), book_abs_bn=("gex_live", lambda v: float(np.median(np.abs(v)) / 1e9)),
                                    share_0dte=("share_0dte_of_book", "median"), net_0dte_positive_share=("gex_0dte", lambda v: float((v > 0).mean())))
     out["by_bucket"] = by_b.round(4).reset_index().to_dict("records")
     dd = d.dropna(subset=["next_range_adj"])
     dd = dd[dd["bucket"] < 12]
     out["spearman_next_range"] = {"stale": float(spearmanr(dd["gex_prev"], dd["next_range_adj"]).correlation),
-                                  "remark": float(spearmanr(dd["gex_rt"], dd["next_range_adj"]).correlation),
-                                  "remark_plus_0dte_signed": float(spearmanr(dd["gex_rt"] + dd["gex_0dte"], dd["next_range_adj"]).correlation),
+                                  "live": float(spearmanr(dd["gex_live"], dd["next_range_adj"]).correlation),
+                                  "live_plus_0dte_signed": float(spearmanr(dd["gex_live"] + dd["gex_0dte"], dd["next_range_adj"]).correlation),
                                   "unsigned_0dte_alone": float(spearmanr(dd["ugex_0dte"], dd["next_range_adj"]).correlation),
                                   "signed_0dte_alone": float(spearmanr(dd["gex_0dte"], dd["next_range_adj"]).correlation)}
-    X = sm.add_constant(pd.DataFrame({"remark_rank": dd["gex_rt"].rank(pct=True), "u0dte_rank": dd["ugex_0dte"].rank(pct=True), "s0dte_rank": dd["gex_0dte"].rank(pct=True)}))
+    X = sm.add_constant(pd.DataFrame({"live_rank": dd["gex_live"].rank(pct=True), "u0dte_rank": dd["ugex_0dte"].rank(pct=True), "s0dte_rank": dd["gex_0dte"].rank(pct=True)}))
     fit = sm.OLS(dd["next_range_adj"].to_numpy(), X).fit(cov_type="cluster", cov_kwds={"groups": pd.factorize(dd["date"])[0]})
     out["joint_regression_t"] = {k: float(v) for k, v in fit.tvalues.items() if k != "const"}
     out["joint_regression_coef"] = {k: float(v) for k, v in fit.params.items() if k != "const"}
@@ -617,15 +617,15 @@ def t8_controls(layer: pd.DataFrame, sol: pd.DataFrame, daily: pd.DataFrame, sym
     day before expiry (OI dated D over OI dated D-1 for the same expiry), the part of 0DTE positioning the
     once-a-day OI does see."""
     import statsmodels.api as sm
-    d = layer.dropna(subset=["gex_rt"]).copy()
+    d = layer.dropna(subset=["gex_live"]).copy()
     day_sofar = d[d["bucket"] <= 11].groupby("date")["range_adj"].mean().rename("range_sofar")
     last = d[d["bucket"] == 11].dropna(subset=["next_range_adj"]).merge(day_sofar, left_on="date", right_index=True)
     X = pd.DataFrame({"u0dte_rank": last["ugex_0dte"].rank(pct=True), "range_sofar_rank": last["range_sofar"].rank(pct=True),
-                      "book_rank": last["gex_rt"].rank(pct=True), "prev_negative": (last["regime_prev"] < 0).astype(float)})
+                      "book_rank": last["gex_live"].rank(pct=True), "prev_negative": (last["regime_prev"] < 0).astype(float)})
     fit = sm.OLS(last["next_range_adj"].to_numpy(), sm.add_constant(X)).fit(cov_type="HC1")
     out = {"n_days": int(len(last)), "last_half_hour_controlled_t": {k: float(v) for k, v in fit.tvalues.items() if k != "const"},
            "last_half_hour_controlled_coef": {k: float(v) for k, v in fit.params.items() if k != "const"}, "r2": float(fit.rsquared)}
-    # within-day-vol strata: terciles of range so far, then high vs low 0DTE exposure inside each stratum
+    # within-day-vol strata: terciles of range so far, then high versus low 0DTE exposure inside each stratum
     strata = {}
     q_sofar = pd.qcut(last["range_sofar"].rank(method="first"), 3, labels=["calm so far", "middle", "wide so far"])
     for lab in ("calm so far", "middle", "wide so far"):
@@ -661,7 +661,7 @@ def fig_zero_dte(t8: dict, path=None):
     bb = bb[bb.index < 12]
     labels = [f"{(570 + 30 * int(b) + 30) // 60:02d}:{(570 + 30 * int(b) + 30) % 60:02d}" for b in bb.index]
     ax1.plot(bb.index, bb["ugex_0dte_bn"], marker="o", color=G.PURPLE, lw=2.0, label="same-day expiry, unsigned gamma exposure")
-    ax1.plot(bb.index, bb["book_abs_bn"], marker="o", color=G.DIM, lw=2.0, label="standing book, abs net GEX (re-marked)")
+    ax1.plot(bb.index, bb["book_abs_bn"], marker="o", color=G.DIM, lw=2.0, label="standing book, abs net GEX (live)")
     ax1.set_xticks(bb.index[::2]); ax1.set_xticklabels(labels[::2], fontsize=9)
     ax1.set_ylabel("median across days, $bn per 1% move")
     ax1.set_xlabel("bucket close, ET")
@@ -675,7 +675,7 @@ def fig_zero_dte(t8: dict, path=None):
     ax2.bar(xs - w / 2, [r[k]["last_half_hour_range_adj_low_0dte"] for k, _ in keys], width=w, color=G.DIM2, lw=0, label="bottom third of 0DTE exposure at 15:30")
     ax2.bar(xs + w / 2, [r[k]["high_0dte"] for k, _ in keys], width=w, color=G.PURPLE, lw=0, label="top third")
     for i, (k, _) in enumerate(keys):
-        ax2.text(i, max(r[k]["last_half_hour_range_adj_low_0dte"], r[k]["high_0dte"]) + 0.05, f"diff {r[k]['diff_high_minus_low']:+.2f}\nCI [{r[k]['ci_lo']:+.2f}, {r[k]['ci_hi']:+.2f}]", ha="center", va="bottom", color=G.FG, fontsize=8.5)
+        ax2.text(i, max(r[k]["last_half_hour_range_adj_low_0dte"], r[k]["high_0dte"]) + 0.05, f"difference {r[k]['diff_high_minus_low']:+.2f}\nCI [{r[k]['ci_lo']:+.2f}, {r[k]['ci_hi']:+.2f}]", ha="center", va="bottom", color=G.FG, fontsize=8.5)
     ax2.set_xticks(xs); ax2.set_xticklabels([f"{lab}\nn = {r[k]['n']}" for k, lab in (("all", "all days"), ("prev_positive", "prior +"), ("prev_negative", "prior -"))], fontsize=9)
     ax2.set_ylabel("15:30 to 16:00 range, multiple of median")
     ax2.set_title("0DTE gamma and the last half hour", loc="left", fontsize=14, pad=20)

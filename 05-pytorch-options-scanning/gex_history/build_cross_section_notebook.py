@@ -1,4 +1,4 @@
-"""Build gex_cross_section.ipynb: daily GEX and the intraday re-mark across the most active names.
+"""Build gex_cross_section.ipynb: daily GEX and the intraday live value across the most active names.
 
     uv run python gex_history/build_cross_section_notebook.py
     uv run jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.timeout=7200 gex_cross_section.ipynb
@@ -42,17 +42,17 @@ def conclusions_md():
     lines = ["## Conclusions", "",
              f"1. Within a name, low GEX goes with a wider next day in {n_above} of {len(ratios)} names (median ratio {med:.2f}), strongest in the index books: " + ", ".join(f"{k} {v:.2f}" for k, v in top3) + f". Pooled over {pt['n_names']} names, bottom third {pt['range_rel_bottom']:.3f} against top third {pt['range_rel_top']:.3f}, CI of the difference [{pt['ci_lo']:+.3f}, {pt['ci_hi']:+.3f}]. Single-name books are call-heavy and rarely negative, so the cut is the name's own tercile, not the sign.",
              f"2. That within-name effect is a market-wide time effect, not a way to pick names. On the same day, names in their own bottom GEX tercile are not wider than names in their own top tercile: difference {sd['mean_diff']:+.3f}, CI [{sd['ci_lo']:+.3f}, {sd['ci_hi']:+.3f}] over {sd['n_groups']} days. The share of names in their low state on D correlates {same['time_effect_spearman_share_low_vs_market_range_next']:+.2f} with the market's average relative range on D+1. Ranking names across the cross-section does not order tomorrow's relative range under any key (bins most negative to most positive: GEX per dollar traded {fmt(keys['gex_per_dv'])}; own z-score {fmt(keys['gex_z'])}; raw GEX {fmt(keys['gex_net_usd'])}).",
-             f"3. Re-marking tracks the next official print in every name: mean sign agreement {intr['t6_mean']['sign_agreement_remark']:.1%} for the re-marked book against {intr['t6_mean']['sign_agreement_stale']:.1%} for the stale print, level correlation {intr['t6_mean']['corr_level_remark']:.2f} against {intr['t6_mean']['corr_level_stale']:.2f}; no name is better served by the stale value. The re-marked sign leaves the prior close's sign on {intr['share_days_with_flip']:.0%} of name-days.",
-             f"4. Pooled over {intr['n_names']} names and {intr['n_buckets']:,} half-hour buckets, a flipped re-marked sign is followed by a next bucket in the predicted direction (negative to positive {f['prev_negative_flipped_positive']['next_range_adj_flipped']:.2f} against {f['prev_negative_flipped_positive']['next_range_adj_same']:.2f}; positive to negative {f['prev_positive_flipped_negative']['next_range_adj_flipped']:.2f} against {f['prev_positive_flipped_negative']['next_range_adj_same']:.2f}), but at the same date and bucket flipped names are not wider than names that held (differences {si['prev_negative_flipped_positive']['mean_diff']:+.3f}, CI [{si['prev_negative_flipped_positive']['ci_lo']:+.3f}, {si['prev_negative_flipped_positive']['ci_hi']:+.3f}], and {si['prev_positive_flipped_negative']['mean_diff']:+.3f}, CI [{si['prev_positive_flipped_negative']['ci_lo']:+.3f}, {si['prev_positive_flipped_negative']['ci_hi']:+.3f}]). Across names, intraday flips are the market's move showing through every book.",
+             f"3. The live book tracks the next official print in every name: mean sign agreement {intr['t6_mean']['sign_agreement_live']:.1%} for the live book against {intr['t6_mean']['sign_agreement_stale']:.1%} for the stale print, level correlation {intr['t6_mean']['corr_level_live']:.2f} against {intr['t6_mean']['corr_level_stale']:.2f}; no name is better served by the stale value. The live sign leaves the prior close's sign on {intr['share_days_with_flip']:.0%} of name-days.",
+             f"4. Pooled over {intr['n_names']} names and {intr['n_buckets']:,} half-hour buckets, a flipped live sign is followed by a next bucket in the predicted direction (negative to positive {f['prev_negative_flipped_positive']['next_range_adj_flipped']:.2f} against {f['prev_negative_flipped_positive']['next_range_adj_same']:.2f}; positive to negative {f['prev_positive_flipped_negative']['next_range_adj_flipped']:.2f} against {f['prev_positive_flipped_negative']['next_range_adj_same']:.2f}), but at the same date and bucket flipped names are not wider than names that held (differences {si['prev_negative_flipped_positive']['mean_diff']:+.3f}, CI [{si['prev_negative_flipped_positive']['ci_lo']:+.3f}, {si['prev_negative_flipped_positive']['ci_hi']:+.3f}], and {si['prev_positive_flipped_negative']['mean_diff']:+.3f}, CI [{si['prev_positive_flipped_negative']['ci_lo']:+.3f}, {si['prev_positive_flipped_negative']['ci_hi']:+.3f}]). Across names, intraday flips are the market's move showing through every book.",
              "5. What a multi-name scanner is therefore demonstrated to do: keep each name's gamma regime current between prints, at a cost the GPU makes negligible. What it is not demonstrated to do: tell which name will be wider or quieter than its peers tomorrow or in the next half hour.",
              "", "Educational analysis, not a trading strategy."]
     return "\n".join(lines)
 
 
 md("""
-# GEX across the most active names: whether the SPY result generalizes and what the intraday re-mark adds
+# GEX across the most active names: whether the SPY result generalizes and what the intraday live value adds
 
-The SPY notebooks showed that the sign of net gamma exposure at the close describes the next session's range, and that re-marking the previous close's book at the current spot tracks the next official print and predicts the next half hour better than the stale value. A scanner over hundreds of names only earns its compute if those two facts hold across names. This notebook runs the same pipeline on the most active optionable names plus the SPX index book over one year, then pools the tests.
+The SPY notebooks showed that the sign of net gamma exposure at the close describes the next session's range, and that the live book, the previous close's book evaluated at the current spot, tracks the next official print and predicts the next half hour better than the stale value. A scanner over hundreds of names only earns its compute if those two facts hold across names. This notebook runs the same pipeline on the most active optionable names plus the SPX index book over one year, then pools the tests.
 """)
 
 md("""
@@ -62,11 +62,17 @@ The 40 most active names from the scanner's universe (ranked by option trading i
 """)
 
 code("""
-import json, sys, time, warnings
-import numpy as np, pandas as pd
+import json
+import sys
+import time
+import warnings
+import numpy as np
+import pandas as pd
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 sys.path.insert(0, "gex_history")
-import gexlib as G, intraday as I, cross_section as X
+import gexlib as G
+import intraday as I
+import cross_section as X
 pd.set_option("display.width", 220); pd.set_option("display.max_columns", 40)
 spots = sorted(p.stem.split("_")[0] for p in G.CACHE.glob("*_stock_eod.parquet")) + sorted(p.stem.split("_")[0] for p in G.CACHE.glob("*_index_eod.parquet"))
 symbols = [s for s in spots if s not in ("spy", "spxw")]
@@ -77,7 +83,7 @@ print(len(symbols), "spot symbols:", " ".join(s.upper() for s in symbols))
 md("""
 ## Daily GEX per name
 
-Same engine pass per name: chain prep, American IV and gamma on the CPU in fp64, the daily table, and the 81-point spot-grid profile that the intraday re-mark reads. Each row of the summary is one name.
+Same engine pass per name: chain prep, American IV and gamma on the CPU in fp64, the daily table, and the 81-point spot-grid profile that the intraday live value reads. Each row of the summary is one name.
 """)
 
 code("""
@@ -135,9 +141,9 @@ xs.style.format({"range_rel_next": "{:.3f}", "absret_next": "{:.2%}", "ret_next"
 
 
 md("""
-## The intraday re-mark across names
+## The intraday live value across names
 
-For each name with 1-minute bars: the previous close's book re-marked at each half-hour close (from its profile), the stale print, and the next bucket's adjusted range. Per name: agreement of the re-mark and of the stale print with the next official GEX sign. Pooled: Spearman on within-name ranks, and the flip-against-same comparison.
+For each name with 1-minute bars: the previous close's book live at each half-hour close (from its profile), the stale print, and the next bucket's adjusted range. Per name: agreement of the live value and of the stale print with the next official GEX sign. Pooled: Spearman on within-name ranks, and the flip-against-same comparison.
 """)
 
 code("""
@@ -147,14 +153,14 @@ pooled_intra = X.pooled_intraday(intra)
 print(f"{len(intra)} names with intraday panels in {time.perf_counter() - t0:.0f}s")
 print({k: v for k, v in pooled_intra.items() if k not in ("t6_by_name", "flip_vs_same")})
 display(pd.DataFrame(pooled_intra["flip_vs_same"]).T.style.format("{:.3f}"))
-_ = X.fig_remark_by_name(pooled_intra["t6_by_name"], G.FIGURES / "f13_remark_by_name.png")
+_ = X.fig_live_by_name(pooled_intra["t6_by_name"], G.FIGURES / "f13_live_by_name.png")
 pd.DataFrame(pooled_intra["t6_by_name"]).T.style.format("{:.3f}")
 """)
 
 md("""
 ## Whether GEX separates names from each other on the same day
 
-The pooled tests above stack name-days, so a market-wide effect (every book turns negative on the same wide days) would pass them. The scanner question is different: whether, at the same time, a name's GEX state says anything about that name against the others. Daily: within each date, names in their own bottom GEX tercile against names in their own top tercile. Intraday: within each date and bucket, names whose re-marked sign flipped against names whose sign held. The time effect itself is the correlation between the share of names in their low state on D and the market's average relative range on D+1.
+The pooled tests above stack name-days, so a market-wide effect (every book turns negative on the same wide days) would pass them. The scanner question is different: whether, at the same time, a name's GEX state says anything about that name against the others. Daily: within each date, names in their own bottom GEX tercile against names in their own top tercile. Intraday: within each date and bucket, names whose live sign flipped against names whose sign held. The time effect itself is the correlation between the share of names in their low state on D and the market's average relative range on D+1.
 """)
 
 code("""

@@ -13,9 +13,9 @@ probe.py                        step 1 probe of the Theta endpoints: schemas, OI
 download.py                     pull + cache, resumable, standalone (the only network step)
 gexlib.py                       chain prep, engine call, GEX aggregation, flip level, regimes, tests, figures
 build_notebook.py               writes the notebook from short cells; run, execute, run again, execute again
-intraday.py                     real-time re-mark of the book (daily spot-grid profiles) and the intraday tests T1..T7
+intraday.py                     the live book (the previous close's book evaluated at the current spot, from daily spot-grid profiles) and the intraday tests T1..T7
 build_intraday_notebook.py      writes ../gex_intraday_spy.ipynb (same two-pass scheme)
-remark_gpu.py                   device-resident re-mark kernel around the engine's device function; timing table
+live_gpu.py                   device-resident live value kernel around the engine's device function; timing table
 download_universe.py            multi-symbol pull (quotes, OI, spot, 1-minute bars) for the cross-section
 cross_section.py                per-name daily GEX + profiles, pooled tests, cross-sectional sort, pooled intraday tests
 build_cross_section_notebook.py writes ../gex_cross_section.ipynb
@@ -29,19 +29,19 @@ results/
   episodes.json                 the rule-selected episodes and their stats
   regime_stats.json             next-session tests, cross-correlation, pinning, intraday
   vendor_vs_engine.json         vendor gamma against engine gamma
-  intraday_spy.json             SPY intraday tests (re-mark against stale, flips, walls, time of day, model choice)
-  remark_timing.json            GPU kernel against CPU timing of the spot-grid re-mark
+  intraday_spy.json             SPY intraday tests (live value against stale, flips, walls, time of day, model choice)
+  live_timing.json            GPU kernel against CPU timing of the spot-grid live value
   download_universe_log.json    the multi-symbol pull
   cross_section/                per-name daily tables ({sym}_daily.csv), symbols.json, summary.json
 ```
 
 Notebooks at the module top level: `gex_history_spy.ipynb` (daily regime tests, 3 years), `gex_intraday_spy.ipynb`
-(what re-marking the book intraday adds), `gex_cross_section.ipynb` (the most active names, 1 year).
+(what the live book adds intraday), `gex_cross_section.ipynb` (the most active names, 1 year).
 
 `../gex_rows/row01..row10_*.ipynb`: one notebook per demonstrated indication (title line plus code), built by
 `build_row_notebooks.py` on `rows.py`; each computes SPY live and shows the per-name table from
 `results/cross_section/per_symbol_tests.json` (`per_symbol_tests.py`, SPY QQQ IWM NVDA TSLA AAPL AMZN META MSFT AMD).
-Rows: 1 re-mark tracks the next print; 2 level at 10:00 sets the rest of day; 3 re-mark beats the stale print for the
+Rows: 1 live value tracks the next print; 2 level at 10:00 sets the rest of day; 3 live value beats the stale print for the
 next 30 minutes; 4 flip crossings; 5 the 0DTE layer; 6 persistence; 7 intraday realized vol by daily regime;
 8 next-day range; 9 next-week vol; 10 tail days.
 
@@ -120,33 +120,33 @@ reference run; NVIDIA RTX PRO 6000 Blackwell (96GB) for the fp32 comparison, sel
 `cuda.select_device(1)` because numba enumerates the RTX 6000 Ada in this box first. All GEX
 numbers come from the CPU fp64 run. Download time is not part of any number.
 
-## Intraday: what re-marking the book adds (`gex_intraday_spy.ipynb`)
+## Intraday: what the live book adds (`gex_intraday_spy.ipynb`)
 
 Open interest arrives once a day, so the quantity a continuous scanner produces is the previous
-close's book re-marked at the current spot, vol and time. `intraday.daily_profiles` evaluates each
-day's solved chain on a spot grid from 0.90 S to 1.10 S in 0.25% steps (IV fixed); the re-mark at any
+close's book evaluated at the current spot, vol and time: the live book. `intraday.daily_profiles` evaluates each
+day's solved chain on a spot grid from 0.90 S to 1.10 S in 0.25% steps (IV fixed); the live value at any
 intraday spot is a lookup on that profile. Tests on the traded 1-minute SPY bars, 30-minute buckets,
 range normalized by the time-of-day median. Numbers in `results/intraday_spy.json`.
 
 | test | result |
 |---|---|
-| T6 re-mark against the next official print | sign agreement 92.9% for the book re-marked at today's close against 79.5% for yesterday's print; level correlation 0.96 against 0.77; 77% of the 154 sign changes caught by the close |
+| T6 live value against the next official print | sign agreement 92.9% for the live book at today's close against 79.5% for yesterday's print; level correlation 0.96 against 0.77; 77% of the 154 sign changes caught by the close |
 | T1 realized vol by regime | negative over positive 1.58x (5-minute returns) to 1.64x (30-minute), p < 0.001 at every horizon |
-| T2 re-mark against stale, next 30-minute range | Spearman -0.52 against -0.43; joint rank regression t = -10.6 for the re-mark, -1.5 for the stale value; within-day increment Spearman -0.03 (the re-mark updates the day's level, it does not time buckets) |
-| T3 intraday flips | re-marked sign leaves the prior close's sign on 29% of days; after a negative-to-positive crossing the rest of the day runs 0.60 to 0.64 multiples below no-crossing days of the same regime (matched on move size), after positive-to-negative 0.31 above |
+| T2 live value against stale, next 30-minute range | Spearman -0.52 against -0.43; joint rank regression t = -10.6 for the live value, -1.5 for the stale value; within-day increment Spearman -0.03 (the live value updates the day's level, it does not time buckets) |
+| T3 intraday flips | live sign leaves the prior close's sign on 29% of days; after a negative-to-positive crossing the rest of the day runs 0.60 to 0.64 multiples below no-crossing days of the same regime (matched on move size), after positive-to-negative 0.31 above |
 | T3b near-flip control | days that started within 0.5% of the flip: crossed up 0.97 against stayed 1.24 (CI [-0.40, -0.13]); crossed down 1.12 against 0.81 (CI [+0.21, +0.40]) |
 | T4 wall touches | 30 minutes after the first touch: call wall -1.2 bp (CI [-3.9, +1.5], n 122), put wall -2.7 bp (CI [-8.6, +3.2], n 86); placebo levels 5 dollars away look the same. Not support or resistance |
 | T5 time of day | negative over positive range ratio between 1.38 and 1.74 in every half hour; widest bucket is the open |
 | T7 model choice | European instead of American changes the daily sign on 15 of 751 days, median 0.26 $bn; American gamma is 1.067x European for in-the-money puts, equal for calls |
 
-## GPU: the re-mark as one kernel (`remark_gpu.py`, `results/remark_timing.json`)
+## GPU: the live value as one kernel (`live_gpu.py`, `results/live_timing.json`)
 
 One thread per contract, 81 spot points, the engine's CUDA device function, per-day sums reduced on
 the device in fp64. Full 3-year SPY history, 2,352,505 contracts x 81 points = 190.6M evaluations:
 kernel 0.87 s, 0.95 s end to end on the NVIDIA RTX PRO 6000 Blackwell (96GB) in fp32, against 107 s for
 the same evaluations through the engine's CPU batch driver in fp64 on the AMD Threadripper PRO 7965WX
 (48 threads). One day (4,086 contracts): 36 ms kernel against 1.8 s CPU. At the measured rate a full
-re-mark of 200 names with 1,500 to 3,000 contracts each is 0.11 to 0.22 s on the GPU and 14 to 27 s on
+live evaluation of 200 names with 1,500 to 3,000 contracts each is 0.11 to 0.22 s on the GPU and 14 to 27 s on
 the CPU path. The fp32 profile differs from the CPU fp64 profile by at most a few 1e-4 of its level.
 
 ## Cross-section: the most active names (`gex_cross_section.ipynb`)
@@ -204,8 +204,8 @@ books, GEX in dollars per 1% move, from `results/cross_section/{sym}_daily.csv`:
 
 Index and ETF books are put-dominated; the mega-caps are call-dominated and almost never negative, so
 the within-name tests use each name's own GEX terciles rather than the sign. Test results and the
-pooled intraday re-mark tests are in `results/cross_section/summary.json` and the notebook's
-conclusions cell. Results. Within a name, low GEX goes with a wider next day in 27 of 39 names (median ratio 1.06; SPX 1.50, QQQ 1.39, DRAM 1.37); pooled bottom third 1.046 against top third 0.978, CI [+0.044, +0.090]. That is a market-wide time effect, not a way to pick names: on the same day, names in their own bottom tercile against names in their own top tercile differ by -0.002 (CI [-0.036, +0.032], 207 days), the share of names in their low state on D correlates +0.20 with the market's average relative range on D+1, and ranking names across the cross-section does not order tomorrow's relative range under any key (most negative to most positive bin: GEX per dollar traded 1.019, 0.995, 0.986, 1.019, 1.023; own z-score 0.992, 1.005, 1.010, 0.998, 1.012; raw GEX 1.025, 0.996, 1.008, 1.013, 1.000). Intraday, over 41 names and 115,644 half-hour buckets: mean sign agreement with the next official print 92.2% for the re-marked book against 85.3% stale, better in every name; the re-marked sign leaves the prior close's sign on 14% of name-days. Pooled flips move the next bucket in the predicted direction (negative to positive 1.11 against 1.26, positive to negative 1.23 against 1.10), but at the same date and bucket flipped names are not wider than names that held (-0.009, CI [-0.038, +0.018]; -0.039, CI [-0.056, -0.021]). A multi-name scanner is therefore shown to keep each name's regime current between prints; it is not shown to tell which name will be wider or quieter than its peers.
+pooled intraday live-book tests are in `results/cross_section/summary.json` and the notebook's
+conclusions cell. Results. Within a name, low GEX goes with a wider next day in 27 of 39 names (median ratio 1.06; SPX 1.50, QQQ 1.39, DRAM 1.37); pooled bottom third 1.046 against top third 0.978, CI [+0.044, +0.090]. That is a market-wide time effect, not a way to pick names: on the same day, names in their own bottom tercile against names in their own top tercile differ by -0.002 (CI [-0.036, +0.032], 207 days), the share of names in their low state on D correlates +0.20 with the market's average relative range on D+1, and ranking names across the cross-section does not order tomorrow's relative range under any key (most negative to most positive bin: GEX per dollar traded 1.019, 0.995, 0.986, 1.019, 1.023; own z-score 0.992, 1.005, 1.010, 0.998, 1.012; raw GEX 1.025, 0.996, 1.008, 1.013, 1.000). Intraday, over 41 names and 115,644 half-hour buckets: mean sign agreement with the next official print 92.2% for the live book against 85.3% stale, better in every name; the live sign leaves the prior close's sign on 14% of name-days. Pooled flips move the next bucket in the predicted direction (negative to positive 1.11 against 1.26, positive to negative 1.23 against 1.10), but at the same date and bucket flipped names are not wider than names that held (-0.009, CI [-0.038, +0.018]; -0.039, CI [-0.056, -0.021]). A multi-name scanner is therefore shown to keep each name's regime current between prints; it is not shown to tell which name will be wider or quieter than its peers.
 
 ## Provenance of the numbers in the conclusions
 
@@ -234,10 +234,10 @@ of `gex_history_spy.ipynb` on this machine; nothing is typed in by hand.
 | vendor against engine net GEX | corr 0.9992, sign agreement 94.5%, abs difference median $0.72bn, p99 $1.51bn; within 7 days to expiry corr 0.9998, sign agreement 98.3%, abs difference median $0.08bn; vendor put GEX is 0.957 of the engine's on the median day, calls 1.006 | `vd, vstats, vtab = G.vendor_compare(sol)` | `results/vendor_vs_engine.json` |
 | strike band check | 94.97% of abs GEX inside 0.90 to 1.10 S, 0.84% outside 0.80 to 1.20 S, on 2026-07-08 | `day = [d for d in days if d.weekday() == 2][-10]` cell | printed |
 
-Intraday numbers come from the cells of `gex_intraday_spy.ipynb` named by their first line (`t6 = I.t6_remark_tracks_next_print(...)`,
-`t1 = I.t1_intraday_vol(...)`, `t2 = I.t2_remark_vs_stale(ob)`, `t3, flipdays = I.t3_intraday_flips(ob)`, `t4 = I.t4_wall_touches(...)`,
+Intraday numbers come from the cells of `gex_intraday_spy.ipynb` named by their first line (`t6 = I.t6_live_tracks_next_print(...)`,
+`t1 = I.t1_intraday_vol(...)`, `t2 = I.t2_live_versus_stale(ob)`, `t3, flipdays = I.t3_intraday_flips(ob)`, `t4 = I.t4_wall_touches(...)`,
 `t5 = I.t5_time_of_day(ob)`, `t7 = I.t7_model_choice(...)`, `layer = I.zero_dte_layer(...)`) and are stored in `results/intraday_spy.json`.
-GPU timings come from `uv run python gex_history/remark_gpu.py` (`results/remark_timing.json`). Cross-section numbers come from the
+GPU timings come from `uv run python gex_history/live_gpu.py` (`results/live_timing.json`). Cross-section numbers come from the
 cells of `gex_cross_section.ipynb` (`runs = [X.run_symbol(...)]`, `bytercile = X.next_day_by_tercile(names)`, `pooled = ...`,
 `xs = X.cross_sectional_sort(...)`, `pooled_intra = X.pooled_intraday(intra)`, `same = X.same_day_tests(panel, ob_all)`) and are stored in
 `results/cross_section/summary.json`.

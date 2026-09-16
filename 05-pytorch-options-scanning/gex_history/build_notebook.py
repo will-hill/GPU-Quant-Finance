@@ -105,9 +105,12 @@ Window: 2023-09-15 to 2026-09-14, the last completed session when the pull ran. 
 """)
 
 code("""
-import json, sys, warnings
+import json
+import sys
+import warnings
 from pathlib import Path
-import numpy as np, pandas as pd
+import numpy as np
+import pandas as pd
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 sys.path.insert(0, "gex_history")
 import gexlib as G
@@ -171,7 +174,7 @@ try:
         sol32, t32 = G.solve_chain(chain, target="cuda", dtype="fp32")
         d_net = (sol32[sol32.iv_status == 0].groupby("date")["gex"].sum() - sol[sol.iv_status == 0].groupby("date")["gex"].sum()).abs()
         print(t32)
-        print(f"GPU fp32 vs CPU fp64 daily net GEX: max abs diff {d_net.max():,.0f} USD, "
+        print(f"GPU fp32 versus CPU fp64 daily net GEX: max abs diff {d_net.max():,.0f} USD, "
               f"max relative {(d_net / sol[sol.iv_status == 0].groupby('date')['gex'].sum().abs()).max():.2e}; timings for scale only")
     else:
         print("no CUDA device: GPU timing skipped")

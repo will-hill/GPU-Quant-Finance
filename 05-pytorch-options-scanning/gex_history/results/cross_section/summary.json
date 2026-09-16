@@ -1194,7 +1194,7 @@
     "n_buckets": 115644,
     "n_days": 9637,
     "spearman_stale": -0.09296294021530166,
-    "spearman_remark": -0.11501712193924497,
+    "spearman_live": -0.11501713059586646,
     "share_days_with_flip": 0.1364532530870603,
     "flip_vs_same": {
       "prev_negative_flipped_positive": {
@@ -1221,297 +1221,297 @@
     "t6_by_name": {
       "AAPL": {
         "sign_agreement_stale": 0.968,
-        "sign_agreement_remark": 0.992,
+        "sign_agreement_live": 0.992,
         "corr_level_stale": 0.84,
-        "corr_level_remark": 0.921,
-        "remark_caught_change": 0.75
+        "corr_level_live": 0.921,
+        "live_caught_change": 0.75
       },
       "AMD": {
         "sign_agreement_stale": 0.84,
-        "sign_agreement_remark": 0.928,
+        "sign_agreement_live": 0.928,
         "corr_level_stale": 0.685,
-        "corr_level_remark": 0.876,
-        "remark_caught_change": 0.6
+        "corr_level_live": 0.876,
+        "live_caught_change": 0.6
       },
       "AMZN": {
         "sign_agreement_stale": 0.944,
-        "sign_agreement_remark": 0.96,
+        "sign_agreement_live": 0.96,
         "corr_level_stale": 0.797,
-        "corr_level_remark": 0.94,
-        "remark_caught_change": 0.643
+        "corr_level_live": 0.94,
+        "live_caught_change": 0.643
       },
       "ARM": {
         "sign_agreement_stale": 0.876,
-        "sign_agreement_remark": 0.924,
+        "sign_agreement_live": 0.924,
         "corr_level_stale": 0.857,
-        "corr_level_remark": 0.932,
-        "remark_caught_change": 0.484
+        "corr_level_live": 0.932,
+        "live_caught_change": 0.484
       },
       "ASML": {
         "sign_agreement_stale": 0.788,
-        "sign_agreement_remark": 0.892,
+        "sign_agreement_live": 0.892,
         "corr_level_stale": 0.641,
-        "corr_level_remark": 0.799,
-        "remark_caught_change": 0.604
+        "corr_level_live": 0.799,
+        "live_caught_change": 0.604
       },
       "ASTS": {
         "sign_agreement_stale": 0.768,
-        "sign_agreement_remark": 0.832,
+        "sign_agreement_live": 0.832,
         "corr_level_stale": 0.777,
-        "corr_level_remark": 0.877,
-        "remark_caught_change": 0.293
+        "corr_level_live": 0.877,
+        "live_caught_change": 0.293
       },
       "AVGO": {
         "sign_agreement_stale": 0.836,
-        "sign_agreement_remark": 0.916,
+        "sign_agreement_live": 0.916,
         "corr_level_stale": 0.769,
-        "corr_level_remark": 0.906,
-        "remark_caught_change": 0.585
+        "corr_level_live": 0.906,
+        "live_caught_change": 0.585
       },
       "BE": {
         "sign_agreement_stale": 0.864,
-        "sign_agreement_remark": 0.908,
+        "sign_agreement_live": 0.908,
         "corr_level_stale": 0.78,
-        "corr_level_remark": 0.871,
-        "remark_caught_change": 0.324
+        "corr_level_live": 0.871,
+        "live_caught_change": 0.324
       },
       "CRWV": {
         "sign_agreement_stale": 0.86,
-        "sign_agreement_remark": 0.904,
+        "sign_agreement_live": 0.904,
         "corr_level_stale": 0.829,
-        "corr_level_remark": 0.914,
-        "remark_caught_change": 0.4
+        "corr_level_live": 0.914,
+        "live_caught_change": 0.4
       },
       "DELL": {
         "sign_agreement_stale": 0.896,
-        "sign_agreement_remark": 0.952,
+        "sign_agreement_live": 0.952,
         "corr_level_stale": 0.735,
-        "corr_level_remark": 0.884,
-        "remark_caught_change": 0.654
+        "corr_level_live": 0.884,
+        "live_caught_change": 0.654
       },
       "DRAM": {
         "sign_agreement_stale": 0.826,
-        "sign_agreement_remark": 0.89,
+        "sign_agreement_live": 0.89,
         "corr_level_stale": 0.65,
-        "corr_level_remark": 0.868,
-        "remark_caught_change": 0.368
+        "corr_level_live": 0.868,
+        "live_caught_change": 0.368
       },
       "EWY": {
         "sign_agreement_stale": 0.896,
-        "sign_agreement_remark": 0.9,
+        "sign_agreement_live": 0.9,
         "corr_level_stale": 0.855,
-        "corr_level_remark": 0.938,
-        "remark_caught_change": 0.231
+        "corr_level_live": 0.938,
+        "live_caught_change": 0.231
       },
       "GLD": {
         "sign_agreement_stale": 0.92,
-        "sign_agreement_remark": 0.976,
+        "sign_agreement_live": 0.976,
         "corr_level_stale": 0.939,
-        "corr_level_remark": 0.97,
-        "remark_caught_change": 0.8
+        "corr_level_live": 0.97,
+        "live_caught_change": 0.8
       },
       "GOOG": {
         "sign_agreement_stale": 0.904,
-        "sign_agreement_remark": 0.952,
+        "sign_agreement_live": 0.952,
         "corr_level_stale": 0.842,
-        "corr_level_remark": 0.929,
-        "remark_caught_change": 0.75
+        "corr_level_live": 0.929,
+        "live_caught_change": 0.75
       },
       "GOOGL": {
         "sign_agreement_stale": 0.904,
-        "sign_agreement_remark": 0.964,
+        "sign_agreement_live": 0.964,
         "corr_level_stale": 0.776,
-        "corr_level_remark": 0.901,
-        "remark_caught_change": 0.667
+        "corr_level_live": 0.901,
+        "live_caught_change": 0.667
       },
       "GS": {
         "sign_agreement_stale": 0.82,
-        "sign_agreement_remark": 0.936,
+        "sign_agreement_live": 0.936,
         "corr_level_stale": 0.727,
-        "corr_level_remark": 0.9,
-        "remark_caught_change": 0.756
+        "corr_level_live": 0.9,
+        "live_caught_change": 0.756
       },
       "IBM": {
         "sign_agreement_stale": 0.864,
-        "sign_agreement_remark": 0.944,
+        "sign_agreement_live": 0.944,
         "corr_level_stale": 0.849,
-        "corr_level_remark": 0.916,
-        "remark_caught_change": 0.647
+        "corr_level_live": 0.916,
+        "live_caught_change": 0.647
       },
       "INTC": {
         "sign_agreement_stale": 0.912,
-        "sign_agreement_remark": 0.948,
+        "sign_agreement_live": 0.948,
         "corr_level_stale": 0.707,
-        "corr_level_remark": 0.861,
-        "remark_caught_change": 0.5
+        "corr_level_live": 0.861,
+        "live_caught_change": 0.5
       },
       "IWM": {
         "sign_agreement_stale": 0.868,
-        "sign_agreement_remark": 0.94,
+        "sign_agreement_live": 0.94,
         "corr_level_stale": 0.822,
-        "corr_level_remark": 0.957,
-        "remark_caught_change": 0.848
+        "corr_level_live": 0.957,
+        "live_caught_change": 0.848
       },
       "META": {
         "sign_agreement_stale": 0.864,
-        "sign_agreement_remark": 0.944,
+        "sign_agreement_live": 0.944,
         "corr_level_stale": 0.729,
-        "corr_level_remark": 0.916,
-        "remark_caught_change": 0.706
+        "corr_level_live": 0.916,
+        "live_caught_change": 0.706
       },
       "MRVL": {
         "sign_agreement_stale": 0.872,
-        "sign_agreement_remark": 0.924,
+        "sign_agreement_live": 0.924,
         "corr_level_stale": 0.72,
-        "corr_level_remark": 0.872,
-        "remark_caught_change": 0.469
+        "corr_level_live": 0.872,
+        "live_caught_change": 0.469
       },
       "MSFT": {
         "sign_agreement_stale": 0.904,
-        "sign_agreement_remark": 0.968,
+        "sign_agreement_live": 0.968,
         "corr_level_stale": 0.886,
-        "corr_level_remark": 0.963,
-        "remark_caught_change": 0.75
+        "corr_level_live": 0.963,
+        "live_caught_change": 0.75
       },
       "MSTR": {
         "sign_agreement_stale": 0.832,
-        "sign_agreement_remark": 0.916,
+        "sign_agreement_live": 0.916,
         "corr_level_stale": 0.64,
-        "corr_level_remark": 0.78,
-        "remark_caught_change": 0.595
+        "corr_level_live": 0.78,
+        "live_caught_change": 0.595
       },
       "MU": {
         "sign_agreement_stale": 0.844,
-        "sign_agreement_remark": 0.924,
+        "sign_agreement_live": 0.924,
         "corr_level_stale": 0.642,
-        "corr_level_remark": 0.828,
-        "remark_caught_change": 0.538
+        "corr_level_live": 0.828,
+        "live_caught_change": 0.538
       },
       "NBIS": {
         "sign_agreement_stale": 0.828,
-        "sign_agreement_remark": 0.88,
+        "sign_agreement_live": 0.88,
         "corr_level_stale": 0.726,
-        "corr_level_remark": 0.823,
-        "remark_caught_change": 0.349
+        "corr_level_live": 0.823,
+        "live_caught_change": 0.349
       },
       "NFLX": {
         "sign_agreement_stale": 0.856,
-        "sign_agreement_remark": 0.912,
+        "sign_agreement_live": 0.912,
         "corr_level_stale": 0.708,
-        "corr_level_remark": 0.89,
-        "remark_caught_change": 0.667
+        "corr_level_live": 0.89,
+        "live_caught_change": 0.667
       },
       "NVDA": {
         "sign_agreement_stale": 0.936,
-        "sign_agreement_remark": 0.988,
+        "sign_agreement_live": 0.988,
         "corr_level_stale": 0.643,
-        "corr_level_remark": 0.877,
-        "remark_caught_change": 0.938
+        "corr_level_live": 0.877,
+        "live_caught_change": 0.938
       },
       "ORCL": {
         "sign_agreement_stale": 0.86,
-        "sign_agreement_remark": 0.924,
+        "sign_agreement_live": 0.924,
         "corr_level_stale": 0.812,
-        "corr_level_remark": 0.922,
-        "remark_caught_change": 0.686
+        "corr_level_live": 0.922,
+        "live_caught_change": 0.686
       },
       "PLTR": {
         "sign_agreement_stale": 0.816,
-        "sign_agreement_remark": 0.908,
+        "sign_agreement_live": 0.908,
         "corr_level_stale": 0.711,
-        "corr_level_remark": 0.878,
-        "remark_caught_change": 0.543
+        "corr_level_live": 0.878,
+        "live_caught_change": 0.543
       },
       "QQQ": {
         "sign_agreement_stale": 0.82,
-        "sign_agreement_remark": 0.928,
+        "sign_agreement_live": 0.928,
         "corr_level_stale": 0.773,
-        "corr_level_remark": 0.968,
-        "remark_caught_change": 0.667
+        "corr_level_live": 0.968,
+        "live_caught_change": 0.667
       },
       "SKHY": {
         "sign_agreement_stale": 0.738,
-        "sign_agreement_remark": 0.857,
+        "sign_agreement_live": 0.857,
         "corr_level_stale": 0.771,
-        "corr_level_remark": 0.904,
-        "remark_caught_change": 0.455
+        "corr_level_live": 0.904,
+        "live_caught_change": 0.455
       },
       "SLV": {
         "sign_agreement_stale": 0.944,
-        "sign_agreement_remark": 0.976,
+        "sign_agreement_live": 0.976,
         "corr_level_stale": 0.907,
-        "corr_level_remark": 0.974,
-        "remark_caught_change": 0.571
+        "corr_level_live": 0.974,
+        "live_caught_change": 0.571
       },
       "SMH": {
         "sign_agreement_stale": 0.804,
-        "sign_agreement_remark": 0.908,
+        "sign_agreement_live": 0.908,
         "corr_level_stale": 0.814,
-        "corr_level_remark": 0.916,
-        "remark_caught_change": 0.714
+        "corr_level_live": 0.916,
+        "live_caught_change": 0.714
       },
       "SNDK": {
         "sign_agreement_stale": 0.788,
-        "sign_agreement_remark": 0.864,
+        "sign_agreement_live": 0.864,
         "corr_level_stale": 0.613,
-        "corr_level_remark": 0.759,
-        "remark_caught_change": 0.377
+        "corr_level_live": 0.759,
+        "live_caught_change": 0.377
       },
       "SOXL": {
         "sign_agreement_stale": 0.804,
-        "sign_agreement_remark": 0.86,
+        "sign_agreement_live": 0.86,
         "corr_level_stale": 0.678,
-        "corr_level_remark": 0.773,
-        "remark_caught_change": 0.286
+        "corr_level_live": 0.773,
+        "live_caught_change": 0.286
       },
       "SPCX": {
         "sign_agreement_stale": 0.838,
-        "sign_agreement_remark": 0.85,
+        "sign_agreement_live": 0.85,
         "corr_level_stale": 0.711,
-        "corr_level_remark": 0.87,
-        "remark_caught_change": 0.231
+        "corr_level_live": 0.87,
+        "live_caught_change": 0.231
       },
       "STX": {
         "sign_agreement_stale": 0.796,
-        "sign_agreement_remark": 0.892,
+        "sign_agreement_live": 0.892,
         "corr_level_stale": 0.672,
-        "corr_level_remark": 0.826,
-        "remark_caught_change": 0.51
+        "corr_level_live": 0.826,
+        "live_caught_change": 0.51
       },
       "TSLA": {
         "sign_agreement_stale": 0.808,
-        "sign_agreement_remark": 0.92,
+        "sign_agreement_live": 0.92,
         "corr_level_stale": 0.703,
-        "corr_level_remark": 0.895,
-        "remark_caught_change": 0.646
+        "corr_level_live": 0.895,
+        "live_caught_change": 0.646
       },
       "TSM": {
         "sign_agreement_stale": 0.844,
-        "sign_agreement_remark": 0.944,
+        "sign_agreement_live": 0.944,
         "corr_level_stale": 0.759,
-        "corr_level_remark": 0.897,
-        "remark_caught_change": 0.718
+        "corr_level_live": 0.897,
+        "live_caught_change": 0.718
       },
       "WDC": {
         "sign_agreement_stale": 0.86,
-        "sign_agreement_remark": 0.916,
+        "sign_agreement_live": 0.916,
         "corr_level_stale": 0.817,
-        "corr_level_remark": 0.9,
-        "remark_caught_change": 0.429
+        "corr_level_live": 0.9,
+        "live_caught_change": 0.429
       },
       "SPX": {
         "sign_agreement_stale": 0.78,
-        "sign_agreement_remark": 0.936,
+        "sign_agreement_live": 0.936,
         "corr_level_stale": 0.758,
-        "corr_level_remark": 0.905,
-        "remark_caught_change": 0.836
+        "corr_level_live": 0.905,
+        "live_caught_change": 0.836
       }
     },
     "t6_mean": {
       "sign_agreement_stale": 0.853,
-      "sign_agreement_remark": 0.922,
+      "sign_agreement_live": 0.922,
       "corr_level_stale": 0.758,
-      "corr_level_remark": 0.89
+      "corr_level_live": 0.89
     }
   }
 }

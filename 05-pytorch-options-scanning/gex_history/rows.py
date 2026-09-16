@@ -43,15 +43,15 @@ def per_name(cols: dict, names=NAMES) -> pd.DataFrame:
 
 # ----------------------------------------------------------------------------- rows
 def row1(ctx):
-    return I.t6_remark_tracks_next_print(ctx["daily"], ctx["prof"])
+    return I.t6_live_tracks_next_print(ctx["daily"], ctx["prof"])
 
 
 def fig1(ctx, res, path=None):
-    return I.fig_remark_vs_stale(ctx["daily"], ctx["prof"], res, path)
+    return I.fig_live_versus_stale(ctx["daily"], ctx["prof"], res, path)
 
 
 def row2(ctx):
-    ob = ctx["ob"]; W = ob.pivot(index="date", columns="bucket", values="range_adj"); Gx = ob.pivot(index="date", columns="bucket", values="gex_rt")
+    ob = ctx["ob"]; W = ob.pivot(index="date", columns="bucket", values="range_adj"); Gx = ob.pivot(index="date", columns="bucket", values="gex_live")
     stale = ob.groupby("date")["gex_prev"].first()
     def fwd(k, h):
         cols = [c for c in W.columns if c > k and (h is None or c <= k + h)]
@@ -67,7 +67,7 @@ def row2(ctx):
     terc = y.groupby(q, observed=True).mean()
     size = pd.qcut(x.abs().rank(method="first"), 3, labels=["small", "medium", "large"])
     by_size_sign = y.groupby([np.sign(x).map({-1.0: "negative", 1.0: "positive"}), size], observed=True).mean()
-    return {"spearman_by_time_and_horizon (re-mark, stale)": horizons, "rest_of_day_by_1000_tercile": terc.round(3).to_dict(),
+    return {"spearman_by_time_and_horizon (live, stale)": horizons, "rest_of_day_by_1000_tercile": terc.round(3).to_dict(),
             "rest_of_day_by_sign_and_size": {f"{a} {b}": round(v, 3) for (a, b), v in by_size_sign.items()},
             "p_low_vs_high": float(mannwhitneyu(y[q == "low third"], y[q == "high third"]).pvalue), "n_days": int(len(x))}
 
@@ -78,13 +78,13 @@ def fig2(ctx, res, path=None):
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(9.6, 4.6), gridspec_kw={"wspace": 0.3})
     t = res["rest_of_day_by_1000_tercile"]; keys = ["low third", "middle", "high third"]
     ax1.bar(range(3), [t[k] for k in keys], color=[G.ORANGE, G.DIM2, G.CYAN], width=0.6, lw=0)
-    for i, k in enumerate(keys): ax1.text(i, t[k] + 0.03, f"{t[k]:.2f}x", ha="center", color=G.FG)
-    ax1.set_xticks(range(3)); ax1.set_xticklabels(keys, fontsize=10); ax1.set_xlabel("re-marked GEX at 10:00, terciles")
+    for i, k in enumerate(keys): ax1.text(i, t[k] + 0.03, f"{t[k]:.2f} times", ha="center", color=G.FG)
+    ax1.set_xticks(range(3)); ax1.set_xticklabels(keys, fontsize=10); ax1.set_xlabel("live GEX at 10:00, terciles")
     ax1.set_ylabel("rest-of-day range, multiple of time-of-day median"); ax1.set_title(f"{ctx['sym']}: level at 10:00 sets the day", loc="left", fontsize=14)
     s = res["rest_of_day_by_sign_and_size"]; order = ["negative large", "negative medium", "negative small", "positive small", "positive medium", "positive large"]
     vals = [s.get(k, np.nan) for k in order]
     ax2.bar(range(6), vals, color=[G.ORANGE] * 3 + [G.CYAN] * 3, width=0.6, lw=0)
-    for i, v in enumerate(vals): ax2.text(i, v + 0.03, f"{v:.2f}x", ha="center", color=G.FG, fontsize=9)
+    for i, v in enumerate(vals): ax2.text(i, v + 0.03, f"{v:.2f} times", ha="center", color=G.FG, fontsize=9)
     from matplotlib.patches import Patch
     ax2.set_xticks(range(6)); ax2.set_xticklabels([k.split()[1] for k in order], fontsize=10); ax2.set_xlabel("size of |GEX| at 10:00, terciles")
     ax2.legend(handles=[Patch(color=G.ORANGE, label="negative at 10:00"), Patch(color=G.CYAN, label="positive at 10:00")], loc="upper right", fontsize=9)
@@ -96,26 +96,26 @@ def fig2(ctx, res, path=None):
 
 def row3(ctx):
     import statsmodels.api as sm
-    ob = ctx["ob"]; t2 = I.t2_remark_vs_stale(ob)
-    d = ob.dropna(subset=["next_range_adj", "gex_rt", "gex_prev"])
-    X_ = sm.add_constant(pd.DataFrame({"stale_rank": d["gex_prev"].rank(pct=True), "remark_rank": d["gex_rt"].rank(pct=True)}))
+    ob = ctx["ob"]; t2 = I.t2_live_versus_stale(ob)
+    d = ob.dropna(subset=["next_range_adj", "gex_live", "gex_prev"])
+    X_ = sm.add_constant(pd.DataFrame({"stale_rank": d["gex_prev"].rank(pct=True), "live_rank": d["gex_live"].rank(pct=True)}))
     fit = sm.OLS(d["next_range_adj"].to_numpy(), X_).fit(cov_type="cluster", cov_kwds={"groups": pd.factorize(d["date"])[0]})
-    by_bucket = {int(b): (float(spearmanr(g["gex_rt"], g["next_range_adj"]).correlation), float(spearmanr(g["gex_prev"], g["next_range_adj"]).correlation)) for b, g in d.groupby("bucket") if len(g) > 50}
-    return {"spearman_remark": t2["spearman_remark"], "spearman_stale": t2["spearman_stale"], "within_day_increment": t2["spearman_increment_within_day"],
-            "joint_regression_t": {"remark": float(fit.tvalues["remark_rank"]), "stale": float(fit.tvalues["stale_rank"])}, "n_buckets": t2["n_buckets"],
-            "share_days_with_flip": t2["share_days_with_any_flip"], "spearman_by_bucket (re-mark, stale)": by_bucket}
+    by_bucket = {int(b): (float(spearmanr(g["gex_live"], g["next_range_adj"]).correlation), float(spearmanr(g["gex_prev"], g["next_range_adj"]).correlation)) for b, g in d.groupby("bucket") if len(g) > 50}
+    return {"spearman_live": t2["spearman_live"], "spearman_stale": t2["spearman_stale"], "within_day_increment": t2["spearman_increment_within_day"],
+            "joint_regression_t": {"live": float(fit.tvalues["live_rank"]), "stale": float(fit.tvalues["stale_rank"])}, "n_buckets": t2["n_buckets"],
+            "share_days_with_flip": t2["share_days_with_any_flip"], "spearman_by_bucket (live, stale)": by_bucket}
 
 
 def fig3(ctx, res, path=None):
     import matplotlib.pyplot as plt
     G.style()
-    bb = res["spearman_by_bucket (re-mark, stale)"]; ks = sorted(bb)
+    bb = res["spearman_by_bucket (live, stale)"]; ks = sorted(bb)
     fig, ax = plt.subplots(figsize=(G.FIG_W, G.FIG_H))
-    ax.plot(ks, [bb[k][0] for k in ks], marker="o", color=G.CYAN, lw=2, label="re-marked at the bucket close")
+    ax.plot(ks, [bb[k][0] for k in ks], marker="o", color=G.CYAN, lw=2, label="live at the bucket close")
     ax.plot(ks, [bb[k][1] for k in ks], marker="o", color=G.DIM, lw=2, label="stale previous-close print")
     ax.set_xticks(ks); ax.set_xticklabels([f"{(570 + 30 * (k + 1)) // 60:02d}:{(570 + 30 * (k + 1)) % 60:02d}" for k in ks], fontsize=9)
     ax.set_xlabel("bucket close, ET"); ax.set_ylabel("Spearman with the next bucket's adjusted range")
-    ax.set_title(f"{ctx['sym']}: the re-mark's edge grows through the day", loc="left"); ax.legend(loc="lower right")
+    ax.set_title(f"{ctx['sym']}: the live value's edge grows through the day", loc="left"); ax.legend(loc="lower right")
     if path: fig.savefig(path, bbox_inches="tight", pad_inches=0.25)
     return fig
 

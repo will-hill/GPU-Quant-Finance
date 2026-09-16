@@ -1,9 +1,9 @@
-"""Cross-section: daily GEX and the intraday re-mark for many symbols, with pooled tests.
+"""Cross-section: daily GEX and the intraday live book for many symbols, with pooled tests.
 
 Per symbol: chain prep (gexlib), engine solve, daily table (gexlib.daily_gex), spot-grid profiles
 (intraday.daily_profiles), saved to cache/{sym}_profiles.parquet and results/cross_section/{sym}_daily.csv.
 Pooled: next-day range by regime within each name, a cross-sectional sort on GEX per dollar traded,
-and the intraday re-mark tests (T6, T2, T3b) pooled across names. Cache only; no network.
+and the intraday live-book tests (T6, T2, T3b) pooled across names. Cache only; no network.
 """
 from __future__ import annotations
 
@@ -155,8 +155,8 @@ def intraday_for_symbol(symbol: str) -> dict | None:
     ob = I.attach_regime(I.bucketize(bars, 30), daily, prof)
     if len(ob) < 200:
         return None
-    t6 = I.t6_remark_tracks_next_print(daily, prof)
-    t2 = I.t2_remark_vs_stale(ob)
+    t6 = I.t6_live_tracks_next_print(daily, prof)
+    t2 = I.t2_live_versus_stale(ob)
     t3, days = I.t3_intraday_flips(ob)
     t3b = I.t3b_near_flip(ob, days, near_pct=1.0)
     ob["symbol"] = symbol.upper()
@@ -164,18 +164,18 @@ def intraday_for_symbol(symbol: str) -> dict | None:
 
 
 def pooled_intraday(results: list[dict]) -> dict:
-    """Pool the bucket panels of all names: re-mark against stale (Spearman on within-name ranks), flip-versus-
+    """Pool the bucket panels of all names: live value against stale (Spearman on within-name ranks), flip-versus-
     same next-bucket range, and the near-flip crossing test with the whole cross-section as the sample."""
     from scipy.stats import mannwhitneyu, spearmanr
     ob = pd.concat([r["ob"] for r in results], ignore_index=True)
     ob["gex_prev_rank"] = ob.groupby("symbol")["gex_prev"].rank(pct=True)
-    ob["gex_rt_rank"] = ob.groupby("symbol")["gex_rt"].rank(pct=True)
-    d = ob.dropna(subset=["next_range_adj", "gex_rt", "gex_prev"])
+    ob["gex_live_rank"] = ob.groupby("symbol")["gex_live"].rank(pct=True)
+    d = ob.dropna(subset=["next_range_adj", "gex_live", "gex_prev"])
     out = {"n_names": int(d["symbol"].nunique()), "n_buckets": int(len(d)), "n_days": int(d.groupby(["symbol", "date"]).ngroups),
            "spearman_stale": float(spearmanr(d["gex_prev_rank"], d["next_range_adj"]).correlation),
-           "spearman_remark": float(spearmanr(d["gex_rt_rank"], d["next_range_adj"]).correlation)}
-    flipped = d["regime_rt"] != d["regime_prev"]
-    out["share_days_with_flip"] = float(d.groupby(["symbol", "date"]).apply(lambda g: (g["regime_rt"] != g["regime_prev"]).any()).mean())
+           "spearman_live": float(spearmanr(d["gex_live_rank"], d["next_range_adj"]).correlation)}
+    flipped = d["regime_live"] != d["regime_prev"]
+    out["share_days_with_flip"] = float(d.groupby(["symbol", "date"]).apply(lambda g: (g["regime_live"] != g["regime_prev"]).any()).mean())
     res = {}
     for reg, lab in ((-1, "prev_negative_flipped_positive"), (1, "prev_positive_flipped_negative")):
         m = d["regime_prev"] == reg
@@ -185,8 +185,8 @@ def pooled_intraday(results: list[dict]) -> dict:
                     "diff": float(a.mean() - b.mean()), "ci_lo": lo, "ci_hi": hi, "p_mwu": float(mannwhitneyu(a, b).pvalue)}
     out["flip_vs_same"] = res
     t6 = pd.DataFrame([r["t6"] for r in results], index=[r["symbol"] for r in results])
-    out["t6_by_name"] = t6[["sign_agreement_stale", "sign_agreement_remark", "corr_level_stale", "corr_level_remark", "remark_caught_change"]].round(3).to_dict("index")
-    out["t6_mean"] = t6[["sign_agreement_stale", "sign_agreement_remark", "corr_level_stale", "corr_level_remark"]].mean().round(3).to_dict()
+    out["t6_by_name"] = t6[["sign_agreement_stale", "sign_agreement_live", "corr_level_stale", "corr_level_live", "live_caught_change"]].round(3).to_dict("index")
+    out["t6_mean"] = t6[["sign_agreement_stale", "sign_agreement_live", "corr_level_stale", "corr_level_live"]].mean().round(3).to_dict()
     return out
 
 
@@ -230,19 +230,19 @@ def fig_xs_sort(sort_tbl: pd.DataFrame, key_label: str, path=None):
     return fig
 
 
-def fig_remark_by_name(t6_by_name: dict, path=None):
+def fig_live_by_name(t6_by_name: dict, path=None):
     import matplotlib.pyplot as plt
     G.style()
-    t = pd.DataFrame(t6_by_name).T.sort_values("sign_agreement_remark")
+    t = pd.DataFrame(t6_by_name).T.sort_values("sign_agreement_live")
     fig, ax = plt.subplots(figsize=(G.FIG_W, max(G.FIG_H, 0.22 * len(t) + 1.5)))
     ys = np.arange(len(t))
-    ax.hlines(ys, t["sign_agreement_stale"] * 100, t["sign_agreement_remark"] * 100, color=G.DIM2, lw=2)
+    ax.hlines(ys, t["sign_agreement_stale"] * 100, t["sign_agreement_live"] * 100, color=G.DIM2, lw=2)
     ax.scatter(t["sign_agreement_stale"] * 100, ys, color=G.DIM, s=40, zorder=3, label="stale: yesterday's print")
-    ax.scatter(t["sign_agreement_remark"] * 100, ys, color=G.CYAN, s=40, zorder=3, label="re-marked at today's close")
+    ax.scatter(t["sign_agreement_live"] * 100, ys, color=G.CYAN, s=40, zorder=3, label="live at today's close")
     ax.set_yticks(ys); ax.set_yticklabels(t.index, fontsize=9)
     ax.set_xlabel("agreement with the sign of the next official GEX print, %")
-    ax.set_title("Re-marking the book tracks the next print in every name", loc="left", pad=22)
-    ax.text(0.0, 1.01, f"mean across names: stale {t['sign_agreement_stale'].mean():.1%}, re-marked {t['sign_agreement_remark'].mean():.1%}", transform=ax.transAxes, color=G.DIM, fontsize=10, va="bottom")
+    ax.set_title("The live book tracks the next print in every name", loc="left", pad=22)
+    ax.text(0.0, 1.01, f"mean across names: stale {t['sign_agreement_stale'].mean():.1%}, live {t['sign_agreement_live'].mean():.1%}", transform=ax.transAxes, color=G.DIM, fontsize=10, va="bottom")
     ax.legend(loc="lower right", fontsize=10)
     if path:
         fig.savefig(path, bbox_inches="tight", pad_inches=0.25)
@@ -321,7 +321,7 @@ def _within_group_diff(frame: pd.DataFrame, group_cols, lo_mask: pd.Series, hi_m
 def same_day_tests(panel: pd.DataFrame, ob_all: pd.DataFrame) -> dict:
     """Does GEX separate names from each other at the same time? Daily: within each date, names in their own
     bottom GEX tercile against names in their own top tercile (next-day relative range). Intraday: within each
-    (date, bucket), names whose re-marked sign flipped against names whose sign held, by prior regime. Also the
+    (date, bucket), names whose live sign flipped against names whose sign held, by prior regime. Also the
     time effect: the share of names in their bottom tercile on D against the market-average relative range on D+1."""
     from scipy.stats import spearmanr
     p = panel.dropna(subset=["range_rel_next"]).copy()
@@ -330,8 +330,8 @@ def same_day_tests(panel: pd.DataFrame, ob_all: pd.DataFrame) -> dict:
     out = {"daily_same_day_bottom_minus_top": _within_group_diff(p, ["date"], p["own_tercile"] == 0, p["own_tercile"] == 2)}
     bydate = p.groupby("date").agg(rr=("range_rel_next", "mean"), share_low=("own_tercile", lambda t: float((t == 0).mean())))
     out["time_effect_spearman_share_low_vs_market_range_next"] = float(spearmanr(bydate["share_low"], bydate["rr"]).correlation)
-    ob = ob_all.dropna(subset=["next_range_adj", "gex_rt"]).copy()
-    ob["flipped"] = ob["regime_rt"] != ob["regime_prev"]; ob["y"] = ob["next_range_adj"]
+    ob = ob_all.dropna(subset=["next_range_adj", "gex_live"]).copy()
+    ob["flipped"] = ob["regime_live"] != ob["regime_prev"]; ob["y"] = ob["next_range_adj"]
     res = {}
     for reg, lab in ((-1, "prev_negative_flipped_positive"), (1, "prev_positive_flipped_negative")):
         q = ob[ob["regime_prev"] == reg].reset_index(drop=True)

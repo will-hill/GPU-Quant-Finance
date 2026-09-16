@@ -1,12 +1,12 @@
-"""Device-resident re-mark of a solved chain on a spot grid: the scanner's intraday workload as one kernel.
+"""Device-resident live evaluation of a solved chain on a spot grid: the scanner's intraday workload as one kernel.
 
 One thread per contract loops over the grid points, calls the engine's device function for gamma at
 spot = S0 x rel, and writes signed GEX per (contract, grid point). The per-day sums are reduced on the
 device with CuPy; only the (days x grid) profile comes back to the host. The engine's boundary solve
 runs once per evaluation (for calls the put-call symmetry makes the boundary depend on spot), so this
-is the full cost of a re-mark, not a shortcut.
+is the full cost of a live evaluation, not a shortcut.
 
-    uv run python gex_history/remark_gpu.py            # times the SPY history and one day; writes results/remark_timing.json
+    uv run python gex_history/live_gpu.py            # times the SPY history and one day; writes results/live_timing.json
 """
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ import gexlib as G  # noqa: E402
 import intraday as I  # noqa: E402
 
 
-def build_remark_kernel(dtype=np.float32):
+def build_live_kernel(dtype=np.float32):
     from numba import cuda
     from alo_numba import make_core
     core = make_core(dtype, "cuda", 7, 7, 27, m_iter=4)
@@ -40,13 +40,13 @@ def build_remark_kernel(dtype=np.float32):
     return kern
 
 
-class RemarkGPU:
+class LiveGPU:
     """Holds the compiled kernel and tables; `profiles(sol_ok, rel)` returns (days x grid) net GEX and timings."""
 
     def __init__(self, dtype=np.float32, threads=256):
         from alo_numba import Tables
         self.f, self.threads = dtype, threads
-        self.kern = build_remark_kernel(dtype)
+        self.kern = build_live_kernel(dtype)
         self.tab = Tables(dtype, 7, 7, 27)
 
     def profiles(self, sol_ok: pd.DataFrame, rel: np.ndarray = I.REL, return_timing=True):
@@ -94,7 +94,7 @@ def main():
         chain, _ = G.prep_all(days, stock, sofr, verbose=False)
         sol, _ = G.solve_chain(chain)
     ok = sol[sol["iv_status"] == 0]
-    rm = RemarkGPU(np.float32)
+    rm = LiveGPU(np.float32)
     one = ok[ok["date"] == pd.Timestamp("2026-07-08")]
     rm.profiles(one)                                   # compile
     res = {"device": dev, "dtype": "fp32", "cpu": "AMD Threadripper PRO 7965WX, 48 numba threads, fp64"}
@@ -115,7 +115,7 @@ def main():
         ev = 200 * per_name * len(I.REL)
         res[f"scanner_200_names_{per_name}_contracts_each"] = {"evaluations": ev, "gpu_kernel_s": ev / rate,
                                                                 "cpu_fp64_s_at_measured_rate": ev / (res["full_history"]["evaluations"] / 107.0)}
-    G.save_json(res, G.RESULTS / "remark_timing.json")
+    G.save_json(res, G.RESULTS / "live_timing.json")
     print(json.dumps(res, indent=1, default=float))
 
 

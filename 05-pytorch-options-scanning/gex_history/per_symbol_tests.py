@@ -27,17 +27,17 @@ def run(sym: str) -> dict:
     bars = I.load_bars(sym)
     ob = I.attach_regime(I.bucketize(bars, 30), daily, prof)
     r = {"symbol": sym.upper(), "days": int(len(daily)), "share_negative": float((daily["regime"] < 0).mean())}
-    # row 1: re-mark tracks the next print
-    t6 = I.t6_remark_tracks_next_print(daily, prof)
-    r["r1_sign_agree_remark"], r["r1_sign_agree_stale"], r["r1_corr_remark"], r["r1_corr_stale"] = t6["sign_agreement_remark"], t6["sign_agreement_stale"], t6["corr_level_remark"], t6["corr_level_stale"]
-    # row 2: re-marked level at 10:00 -> rest of day
-    W = ob.pivot(index="date", columns="bucket", values="range_adj"); Gx = ob.pivot(index="date", columns="bucket", values="gex_rt")
+    # row 1: live value tracks the next print
+    t6 = I.t6_live_tracks_next_print(daily, prof)
+    r["r1_sign_agree_live"], r["r1_sign_agree_stale"], r["r1_corr_live"], r["r1_corr_stale"] = t6["sign_agreement_live"], t6["sign_agreement_stale"], t6["corr_level_live"], t6["corr_level_stale"]
+    # row 2: live level at 10:00 -> rest of day
+    W = ob.pivot(index="date", columns="bucket", values="range_adj"); Gx = ob.pivot(index="date", columns="bucket", values="gex_live")
     rest = W[[c for c in W.columns if c > 0]].mean(axis=1); x = Gx[0]; m = x.notna() & rest.notna()
     q = pd.qcut(x[m].rank(method="first"), 3, labels=False)
     r["r2_spearman_1000_rest"] = float(spearmanr(x[m], rest[m]).correlation)
     r["r2_rest_low_third"], r["r2_rest_high_third"] = float(rest[m][q == 0].mean()), float(rest[m][q == 2].mean())
     # row 3: any bucket -> next 30 min
-    t2 = I.t2_remark_vs_stale(ob); r["r3_spearman_remark"], r["r3_spearman_stale"], r["r3_share_days_flip"] = t2["spearman_remark"], t2["spearman_stale"], t2["share_days_with_any_flip"]
+    t2 = I.t2_live_versus_stale(ob); r["r3_spearman_live"], r["r3_spearman_stale"], r["r3_share_days_flip"] = t2["spearman_live"], t2["spearman_stale"], t2["share_days_with_any_flip"]
     # row 4: flip crossing near the flip (1%)
     t3, days = I.t3_intraday_flips(ob); t3b = I.t3b_near_flip(ob, days, near_pct=1.0)
     for key, lab in (("neg_to_pos", "up"), ("pos_to_neg", "down")):
