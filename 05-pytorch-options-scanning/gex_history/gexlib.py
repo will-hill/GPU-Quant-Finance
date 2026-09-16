@@ -45,18 +45,29 @@ DROP_LABEL = {
 
 
 # ----------------------------------------------------------------------------- cache access
-def cached_days(kind: str = "eod") -> list[dt.date]:
-    return sorted(dt.date.fromisoformat(p.stem.split("_")[-1]) for p in CACHE.glob(f"spy_{kind}_????-??-??.parquet"))
+INDEX_ROOTS = {"SPX", "SPXW", "XSP", "NDX", "NDXP", "RUT", "RUTW", "VIX", "VIXW", "DJX", "OEX", "XEO"}
+# trailing dividend yields used as flat q per symbol (assumptions); anything not listed uses 0
+Q_BY_SYMBOL = {"SPY": 0.012, "QQQ": 0.006, "IWM": 0.011, "DIA": 0.016, "SPX": 0.012, "SPXW": 0.012, "AAPL": 0.004, "MSFT": 0.007,
+               "META": 0.004, "GOOGL": 0.004, "GOOG": 0.004, "NVDA": 0.0003, "MU": 0.004, "ORCL": 0.010, "TSM": 0.014, "IBM": 0.026,
+               "GS": 0.020, "DELL": 0.012, "AVGO": 0.008, "ASML": 0.009, "WDC": 0.001, "STX": 0.020, "EWY": 0.015, "SMH": 0.004}
 
 
-def study_days() -> list[dt.date]:
+def q_for(symbol: str) -> float:
+    return Q_BY_SYMBOL.get(symbol.upper(), 0.0)
+
+
+def cached_days(kind: str = "eod", symbol: str = "spy") -> list[dt.date]:
+    return sorted(dt.date.fromisoformat(p.stem.split("_")[-1]) for p in CACHE.glob(f"{symbol.lower()}_{kind}_????-??-??.parquet"))
+
+
+def study_days(symbol: str = "spy") -> list[dt.date]:
     """Trading days with both a quote file and an OI file."""
-    return sorted(set(cached_days("eod")) & set(cached_days("oi")))
+    return sorted(set(cached_days("eod", symbol)) & set(cached_days("oi", symbol)))
 
 
-def session_range_1m() -> pd.DataFrame | None:
+def session_range_1m(symbol: str = "spy") -> pd.DataFrame | None:
     """Per-day high and low of the traded 1-minute bars in the regular session, if the intraday cache exists."""
-    files = sorted(CACHE.glob("spy_1m_????-??.parquet"))
+    files = sorted(CACHE.glob(f"{symbol.lower()}_1m_????-??.parquet"))
     if not files:
         return None
     b = (pl.concat([pl.read_parquet(f) for f in files], how="vertical_relaxed")
@@ -69,19 +80,24 @@ def session_range_1m() -> pd.DataFrame | None:
     return b.set_index("date")
 
 
-def load_stock(verbose: bool = False) -> pd.DataFrame:
+def load_stock(symbol: str = "spy", verbose: bool = False) -> pd.DataFrame:
     """SPY daily bars indexed by date, with prev_close, ret_cc, range_pct, gap and open-to-close moves.
 
     High and low are the narrower of the EOD report and the 1-minute session range: a single bad print in
     either source widens the range (2026-02-02 EOD low 69.005), the intersection removes it. The two
     sources agree exactly on all but a handful of days; the count is printed with verbose=True."""
-    df = pl.read_parquet(CACHE / "spy_stock_eod.parquet")
-    out = (df.with_columns(pl.col("created").dt.date().alias("date"))
+    sym = symbol.lower()
+    p_stock, p_index = CACHE / f"{sym}_stock_eod.parquet", CACHE / f"{sym}_index_eod.parquet"
+    df = pl.read_parquet(p_stock if p_stock.exists() else p_index)
+    tcol = "created" if "created" in df.columns else [c for c in df.columns if "time" in c.lower() or "date" in c.lower()][0]
+    if "volume" not in df.columns:
+        df = df.with_columns(pl.lit(0).alias("volume"))
+    out = (df.with_columns(pl.col(tcol).dt.date().alias("date"))
              .select("date", "open", "high", "low", "close", "volume").sort("date").to_pandas())
     out["date"] = pd.to_datetime(out["date"])
     out = out.set_index("date")
     out["high_eod"], out["low_eod"] = out["high"], out["low"]
-    sr = session_range_1m()
+    sr = session_range_1m(symbol)
     if sr is not None:
         j = out.join(sr, how="left")
         hi = np.fmax(np.fmin(j["high_eod"], j["high_1m"]), np.fmax(j["open"], j["close"]))   # the 16:00 auction print is not in the 1m bars
@@ -125,7 +141,7 @@ def rate_for(sofr: pd.Series, day) -> float:
 
 
 # ----------------------------------------------------------------------------- step 3: chain prep
-def prep_day(day: dt.date, S: float, r: float) -> tuple[pl.DataFrame, dict]:
+def prep_day(day: dt.date, S: float, r: float, symbol: str = "spy", q: float | None = None) -> tuple[pl.DataFrame, dict]:
     """One day's chain in the run_chain.py schema plus open_interest, r, q, date, dte.
 
     Universe = the OI record dated `day` (published ~06:30 ET that morning = positions as of the
@@ -133,11 +149,13 @@ def prep_day(day: dt.date, S: float, r: float) -> tuple[pl.DataFrame, dict]:
     (expiration, strike, right). Returns the kept rows and the share of the day's OI in each
     drop bucket (DROP_ORDER).
     """
-    eod = (pl.read_parquet(CACHE / f"spy_eod_{day}.parquet")
+    sym = symbol.lower()
+    q = Q_FLAT if (q is None and sym == "spy") else (q_for(sym) if q is None else q)
+    eod = (pl.read_parquet(CACHE / f"{sym}_eod_{day}.parquet")
              .select(KEY + ["bid", "ask"])
              .with_columns(pl.col("right").str.slice(0, 1))
              .unique(subset=KEY, keep="first"))
-    oi = (pl.read_parquet(CACHE / f"spy_oi_{day}.parquet")
+    oi = (pl.read_parquet(CACHE / f"{sym}_oi_{day}.parquet")
             .with_columns(pl.col("right").str.slice(0, 1))
             .sort("timestamp")
             .unique(subset=KEY, keep="last")            # latest OI message of the morning wins
@@ -170,14 +188,14 @@ def prep_day(day: dt.date, S: float, r: float) -> tuple[pl.DataFrame, dict]:
     for k, v in ch.group_by("drop_reason").agg(pl.len()).iter_rows():
         sh[f"rows_{k}"] = v
     kept = (ch.filter(pl.col("drop_reason") == "kept")
-              .with_columns(pl.lit(SYMBOL).alias("symbol"), pl.lit(float(S)).alias("S"), pl.lit(float(r)).alias("r"),
-                            pl.lit(Q_FLAT).alias("q"), pl.lit(day).alias("date"))
+              .with_columns(pl.lit(sym.upper()).alias("symbol"), pl.lit(float(S)).alias("S"), pl.lit(float(r)).alias("r"),
+                            pl.lit(float(q)).alias("q"), pl.lit(day).alias("date"))
               .select("symbol", "expiration", "strike", "right", "S", "T_years", "mid", "is_call", "bid", "ask",
                       "open_interest", "r", "q", "date", "dte"))
     return kept, sh
 
 
-def prep_all(days, stock: pd.DataFrame, sofr: pd.Series, verbose: bool = True) -> tuple[pd.DataFrame, pd.DataFrame]:
+def prep_all(days, stock: pd.DataFrame, sofr: pd.Series, verbose: bool = True, symbol: str = "spy", q: float | None = None) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Concatenate prep_day over `days`. Returns (chain as pandas, per-day OI shares as pandas)."""
     chains, shares, skipped = [], [], []
     t0 = time.perf_counter()
@@ -186,7 +204,7 @@ def prep_all(days, stock: pd.DataFrame, sofr: pd.Series, verbose: bool = True) -
         if ts not in stock.index:
             skipped.append(d)
             continue
-        kept, sh = prep_day(d, float(stock.loc[ts, "close"]), rate_for(sofr, d))
+        kept, sh = prep_day(d, float(stock.loc[ts, "close"]), rate_for(sofr, d), symbol=symbol, q=q)
         chains.append(kept)
         shares.append({"date": ts, **sh})
     chain = pl.concat(chains).to_pandas()
@@ -221,7 +239,8 @@ def solve_chain(df: pd.DataFrame, target: str = "cpu", dtype: str = "fp64", eval
     n = len(df)
     S = df["S"].to_numpy(np.float64); K = df["strike"].to_numpy(np.float64); T = df["T_years"].to_numpy(np.float64)
     mid = df["mid"].to_numpy(np.float64); r = df["r"].to_numpy(np.float64); q = df["q"].to_numpy(np.float64)
-    style = style_codes(df["is_call"].to_numpy(), False)          # SPY options are American
+    is_euro = df["symbol"].astype(str).str.upper().isin(INDEX_ROOTS).to_numpy()   # index roots are European
+    style = style_codes(df["is_call"].to_numpy(), is_euro)
     tab = Tables(f, 7, 7, 27)
     core = make_core(f, target, 7, 7, 27, m_iter=4)
     eng = Engine(f, target)

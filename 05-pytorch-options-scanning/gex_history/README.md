@@ -13,6 +13,12 @@ probe.py                        step 1 probe of the Theta endpoints: schemas, OI
 download.py                     pull + cache, resumable, standalone (the only network step)
 gexlib.py                       chain prep, engine call, GEX aggregation, flip level, regimes, tests, figures
 build_notebook.py               writes the notebook from short cells; run, execute, run again, execute again
+intraday.py                     real-time re-mark of the book (daily spot-grid profiles) and the intraday tests T1..T7
+build_intraday_notebook.py      writes ../gex_intraday_spy.ipynb (same two-pass scheme)
+remark_gpu.py                   device-resident re-mark kernel around the engine's device function; timing table
+download_universe.py            multi-symbol pull (quotes, OI, spot, 1-minute bars) for the cross-section
+cross_section.py                per-name daily GEX + profiles, pooled tests, cross-sectional sort, pooled intraday tests
+build_cross_section_notebook.py writes ../gex_cross_section.ipynb
 cache/                          one parquet per endpoint per day (gitignored)
 figures/                        PNG, 1920x1080 (gitignored; the notebook outputs carry them)
 results/
@@ -21,7 +27,14 @@ results/
   episodes.json                 the rule-selected episodes and their stats
   regime_stats.json             next-session tests, cross-correlation, pinning, intraday
   vendor_vs_engine.json         vendor gamma against engine gamma
+  intraday_spy.json             SPY intraday tests (re-mark against stale, flips, walls, time of day, model choice)
+  remark_timing.json            GPU kernel against CPU timing of the spot-grid re-mark
+  download_universe_log.json    the multi-symbol pull
+  cross_section/                per-name daily tables ({sym}_daily.csv), symbols.json, summary.json
 ```
+
+Notebooks at the module top level: `gex_history_spy.ipynb` (daily regime tests, 3 years), `gex_intraday_spy.ipynb`
+(what re-marking the book intraday adds), `gex_cross_section.ipynb` (the most active names, 1 year).
 
 ## How to rerun
 
@@ -97,6 +110,35 @@ recent runs of at least 10 days whose median GEX is in the top tercile of the wh
 reference run; NVIDIA RTX PRO 6000 Blackwell (96GB) for the fp32 comparison, selected with
 `cuda.select_device(1)` because numba enumerates the RTX 6000 Ada in this box first. All GEX
 numbers come from the CPU fp64 run. Download time is not part of any number.
+
+## Intraday: what re-marking the book adds (`gex_intraday_spy.ipynb`)
+
+Open interest arrives once a day, so the quantity a continuous scanner produces is the previous
+close's book re-marked at the current spot, vol and time. `intraday.daily_profiles` evaluates each
+day's solved chain on a spot grid from 0.90 S to 1.10 S in 0.25% steps (IV fixed); the re-mark at any
+intraday spot is a lookup on that profile. Tests on the traded 1-minute SPY bars, 30-minute buckets,
+range normalized by the time-of-day median. Numbers in `results/intraday_spy.json`.
+
+| test | result |
+|---|---|
+| T6 re-mark against the next official print | sign agreement 92.9% for the book re-marked at today's close against 79.5% for yesterday's print; level correlation 0.96 against 0.77; 77% of the 154 sign changes caught by the close |
+| T1 realized vol by regime | negative over positive 1.58x (5-minute returns) to 1.64x (30-minute), p < 0.001 at every horizon |
+| T2 re-mark against stale, next 30-minute range | Spearman -0.52 against -0.43; joint rank regression t = -10.6 for the re-mark, -1.5 for the stale value; within-day increment Spearman -0.03 (the re-mark updates the day's level, it does not time buckets) |
+| T3 intraday flips | re-marked sign leaves the prior close's sign on 29% of days; after a negative-to-positive crossing the rest of the day runs 0.60 to 0.64 multiples below no-crossing days of the same regime (matched on move size), after positive-to-negative 0.31 above |
+| T3b near-flip control | days that started within 0.5% of the flip: crossed up 0.97 against stayed 1.24 (CI [-0.40, -0.13]); crossed down 1.12 against 0.81 (CI [+0.21, +0.40]) |
+| T4 wall touches | 30 minutes after the first touch: call wall -1.2 bp (CI [-3.9, +1.5], n 122), put wall -2.7 bp (CI [-8.6, +3.2], n 86); placebo levels 5 dollars away look the same. Not support or resistance |
+| T5 time of day | negative over positive range ratio between 1.38 and 1.74 in every half hour; widest bucket is the open |
+| T7 model choice | European instead of American changes the daily sign on 15 of 751 days, median 0.26 $bn; American gamma is 1.067x European for in-the-money puts, equal for calls |
+
+## GPU: the re-mark as one kernel (`remark_gpu.py`, `results/remark_timing.json`)
+
+One thread per contract, 81 spot points, the engine's CUDA device function, per-day sums reduced on
+the device in fp64. Full 3-year SPY history, 2,352,505 contracts x 81 points = 190.6M evaluations:
+kernel 0.87 s, 0.95 s end to end on the NVIDIA RTX PRO 6000 Blackwell (96GB) in fp32, against 107 s for
+the same evaluations through the engine's CPU batch driver in fp64 on the AMD Threadripper PRO 7965WX
+(48 threads). One day (4,086 contracts): 36 ms kernel against 1.8 s CPU. At the measured rate a full
+re-mark of 200 names with 1,500 to 3,000 contracts each is 0.11 to 0.22 s on the GPU and 14 to 27 s on
+the CPU path. The fp32 profile differs from the CPU fp64 profile by at most a few 1e-4 of its level.
 
 ## Provenance of the numbers in the conclusions
 

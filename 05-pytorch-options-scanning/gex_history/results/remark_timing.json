@@ -1,0 +1,37 @@
+{
+  "device": "NVIDIA RTX PRO 6000 Blackwell Workstation Edition",
+  "dtype": "fp32",
+  "cpu": "AMD Threadripper PRO 7965WX, 48 numba threads, fp64",
+  "one_day": {
+    "n_contracts": 4086,
+    "grid_points": 81,
+    "evaluations": 330966,
+    "t_h2d_s": 0.0012495029950514436,
+    "t_kernel_s": 0.036348464083857834,
+    "t_reduce_and_d2h_s": 0.0006461340235546231,
+    "t_total_s": 0.038073322852142155,
+    "cpu_fp64_engine_price_s": 1.7281950529431924
+  },
+  "full_history": {
+    "n_contracts": 2352505,
+    "grid_points": 81,
+    "evaluations": 190552905,
+    "t_h2d_s": 0.008500867988914251,
+    "t_kernel_s": 0.8748669369379058,
+    "t_reduce_and_d2h_s": 0.0772634589811787,
+    "t_total_s": 0.9606312639079988,
+    "cpu_fp64_engine_price_s_measured_earlier": 107.0
+  },
+  "max_rel_diff_vs_cpu_fp64_profile": 0.0008278852024230361,
+  "kernel_rate_evaluations_per_s": 217807871.06545392,
+  "scanner_200_names_1500_contracts_each": {
+    "evaluations": 24300000,
+    "gpu_kernel_s": 0.11156621604688269,
+    "cpu_fp64_s_at_measured_rate": 13.6450294473338
+  },
+  "scanner_200_names_3000_contracts_each": {
+    "evaluations": 48600000,
+    "gpu_kernel_s": 0.22313243209376538,
+    "cpu_fp64_s_at_measured_rate": 27.2900588946676
+  }
+}
