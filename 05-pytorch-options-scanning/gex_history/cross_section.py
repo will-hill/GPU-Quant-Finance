@@ -303,3 +303,38 @@ def fig_tercile_by_name(tbl: pd.DataFrame, path=None):
     if path:
         fig.savefig(path, bbox_inches="tight", pad_inches=0.25)
     return fig
+
+
+# ----------------------------------------------------------------------------- same-day discrimination across names
+def _within_group_diff(frame: pd.DataFrame, group_cols, lo_mask: pd.Series, hi_mask: pd.Series, y: str = "y", seed: int = 0) -> dict:
+    rng = np.random.default_rng(seed)
+    diffs = []
+    for _, g in frame.groupby(group_cols):
+        a, b = g.loc[lo_mask.loc[g.index], y], g.loc[hi_mask.loc[g.index], y]
+        if len(a) >= 2 and len(b) >= 2:
+            diffs.append(a.mean() - b.mean())
+    d = np.array(diffs)
+    boots = rng.choice(d, (10000, len(d))).mean(1)
+    return {"n_groups": int(len(d)), "mean_diff": float(d.mean()), "ci_lo": float(np.percentile(boots, 2.5)), "ci_hi": float(np.percentile(boots, 97.5)), "share_positive": float((d > 0).mean())}
+
+
+def same_day_tests(panel: pd.DataFrame, ob_all: pd.DataFrame) -> dict:
+    """Does GEX separate names from each other at the same time? Daily: within each date, names in their own
+    bottom GEX tercile against names in their own top tercile (next-day relative range). Intraday: within each
+    (date, bucket), names whose re-marked sign flipped against names whose sign held, by prior regime. Also the
+    time effect: the share of names in their bottom tercile on D against the market-average relative range on D+1."""
+    from scipy.stats import spearmanr
+    p = panel.dropna(subset=["range_rel_next"]).copy()
+    p["own_tercile"] = p.groupby("symbol")["gex_net_usd"].transform(lambda x: pd.qcut(x.rank(method="first"), 3, labels=False))
+    p["y"] = p["range_rel_next"]; p = p.reset_index()
+    out = {"daily_same_day_bottom_minus_top": _within_group_diff(p, ["date"], p["own_tercile"] == 0, p["own_tercile"] == 2)}
+    bydate = p.groupby("date").agg(rr=("range_rel_next", "mean"), share_low=("own_tercile", lambda t: float((t == 0).mean())))
+    out["time_effect_spearman_share_low_vs_market_range_next"] = float(spearmanr(bydate["share_low"], bydate["rr"]).correlation)
+    ob = ob_all.dropna(subset=["next_range_adj", "gex_rt"]).copy()
+    ob["flipped"] = ob["regime_rt"] != ob["regime_prev"]; ob["y"] = ob["next_range_adj"]
+    res = {}
+    for reg, lab in ((-1, "prev_negative_flipped_positive"), (1, "prev_positive_flipped_negative")):
+        q = ob[ob["regime_prev"] == reg].reset_index(drop=True)
+        res[lab] = _within_group_diff(q, ["date", "bucket"], q["flipped"], ~q["flipped"])
+    out["intraday_same_bucket_flipped_minus_same"] = res
+    return out

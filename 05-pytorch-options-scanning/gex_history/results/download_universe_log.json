@@ -1,0 +1,607 @@
+{
+  "generated_at": "2026-09-16T12:32:42",
+  "window": [
+    "2025-09-15",
+    "2026-09-14"
+  ],
+  "symbols": [
+    "MU",
+    "SNDK",
+    "QQQ",
+    "META",
+    "TSLA",
+    "NVDA",
+    "AMD",
+    "AAPL",
+    "AMZN",
+    "MSFT",
+    "ORCL",
+    "INTC",
+    "GLD",
+    "SPCX",
+    "TSM",
+    "NBIS",
+    "BE",
+    "GOOGL",
+    "SMH",
+    "SOXL",
+    "IBM",
+    "MRVL",
+    "IWM",
+    "WDC",
+    "AVGO",
+    "DRAM",
+    "GS",
+    "ARM",
+    "PLTR",
+    "GOOG",
+    "SLV",
+    "MSTR",
+    "DELL",
+    "NFLX",
+    "CRWV",
+    "ASTS",
+    "SKHY",
+    "ASML",
+    "EWY",
+    "STX",
+    "SPX",
+    "SPXW"
+  ],
+  "kinds": [
+    "eod",
+    "oi"
+  ],
+  "weekdays": 261,
+  "option_wall_seconds": 9.7,
+  "new_files": 0,
+  "errors": [],
+  "per_symbol": {
+    "MU": {
+      "complete_days": 251,
+      "first": "2025-09-15",
+      "last": "2026-09-14",
+      "no_data_days": 10,
+      "partial_days": {},
+      "spot": {
+        "status": "cached",
+        "rows": 332
+      }
+    },
+    "SNDK": {
+      "complete_days": 251,
+      "first": "2025-09-15",
+      "last": "2026-09-14",
+      "no_data_days": 10,
+      "partial_days": {},
+      "spot": {
+        "status": "cached",
+        "rows": 332
+      }
+    },
+    "QQQ": {
+      "complete_days": 251,
+      "first": "2025-09-15",
+      "last": "2026-09-14",
+      "no_data_days": 10,
+      "partial_days": {},
+      "spot": {
+        "status": "cached",
+        "rows": 332
+      }
+    },
+    "META": {
+      "complete_days": 251,
+      "first": "2025-09-15",
+      "last": "2026-09-14",
+      "no_data_days": 10,
+      "partial_days": {},
+      "spot": {
+        "status": "cached",
+        "rows": 332
+      }
+    },
+    "TSLA": {
+      "complete_days": 251,
+      "first": "2025-09-15",
+      "last": "2026-09-14",
+      "no_data_days": 10,
+      "partial_days": {},
+      "spot": {
+        "status": "cached",
+        "rows": 332
+      }
+    },
+    "NVDA": {
+      "complete_days": 251,
+      "first": "2025-09-15",
+      "last": "2026-09-14",
+      "no_data_days": 10,
+      "partial_days": {},
+      "spot": {
+        "status": "cached",
+        "rows": 332
+      }
+    },
+    "AMD": {
+      "complete_days": 251,
+      "first": "2025-09-15",
+      "last": "2026-09-14",
+      "no_data_days": 10,
+      "partial_days": {},
+      "spot": {
+        "status": "cached",
+        "rows": 332
+      }
+    },
+    "AAPL": {
+      "complete_days": 251,
+      "first": "2025-09-15",
+      "last": "2026-09-14",
+      "no_data_days": 10,
+      "partial_days": {},
+      "spot": {
+        "status": "cached",
+        "rows": 332
+      }
+    },
+    "AMZN": {
+      "complete_days": 251,
+      "first": "2025-09-15",
+      "last": "2026-09-14",
+      "no_data_days": 10,
+      "partial_days": {},
+      "spot": {
+        "status": "cached",
+        "rows": 332
+      }
+    },
+    "MSFT": {
+      "complete_days": 251,
+      "first": "2025-09-15",
+      "last": "2026-09-14",
+      "no_data_days": 10,
+      "partial_days": {},
+      "spot": {
+        "status": "cached",
+        "rows": 332
+      }
+    },
+    "ORCL": {
+      "complete_days": 251,
+      "first": "2025-09-15",
+      "last": "2026-09-14",
+      "no_data_days": 10,
+      "partial_days": {},
+      "spot": {
+        "status": "cached",
+        "rows": 332
+      }
+    },
+    "INTC": {
+      "complete_days": 251,
+      "first": "2025-09-15",
+      "last": "2026-09-14",
+      "no_data_days": 10,
+      "partial_days": {},
+      "spot": {
+        "status": "cached",
+        "rows": 332
+      }
+    },
+    "GLD": {
+      "complete_days": 251,
+      "first": "2025-09-15",
+      "last": "2026-09-14",
+      "no_data_days": 10,
+      "partial_days": {},
+      "spot": {
+        "status": "cached",
+        "rows": 332
+      }
+    },
+    "SPCX": {
+      "complete_days": 201,
+      "first": "2025-09-15",
+      "last": "2026-09-14",
+      "no_data_days": 58,
+      "partial_days": {
+        "2026-04-07": {
+          "eod": "no_data",
+          "oi": "cached"
+        },
+        "2026-06-16": {
+          "eod": "cached",
+          "oi": "no_data"
+        }
+      },
+      "spot": {
+        "status": "cached",
+        "rows": 285
+      }
+    },
+    "TSM": {
+      "complete_days": 251,
+      "first": "2025-09-15",
+      "last": "2026-09-14",
+      "no_data_days": 10,
+      "partial_days": {},
+      "spot": {
+        "status": "cached",
+        "rows": 332
+      }
+    },
+    "NBIS": {
+      "complete_days": 251,
+      "first": "2025-09-15",
+      "last": "2026-09-14",
+      "no_data_days": 10,
+      "partial_days": {},
+      "spot": {
+        "status": "cached",
+        "rows": 332
+      }
+    },
+    "BE": {
+      "complete_days": 251,
+      "first": "2025-09-15",
+      "last": "2026-09-14",
+      "no_data_days": 10,
+      "partial_days": {},
+      "spot": {
+        "status": "cached",
+        "rows": 332
+      }
+    },
+    "GOOGL": {
+      "complete_days": 251,
+      "first": "2025-09-15",
+      "last": "2026-09-14",
+      "no_data_days": 10,
+      "partial_days": {},
+      "spot": {
+        "status": "cached",
+        "rows": 332
+      }
+    },
+    "SMH": {
+      "complete_days": 251,
+      "first": "2025-09-15",
+      "last": "2026-09-14",
+      "no_data_days": 10,
+      "partial_days": {},
+      "spot": {
+        "status": "cached",
+        "rows": 332
+      }
+    },
+    "SOXL": {
+      "complete_days": 251,
+      "first": "2025-09-15",
+      "last": "2026-09-14",
+      "no_data_days": 10,
+      "partial_days": {},
+      "spot": {
+        "status": "cached",
+        "rows": 332
+      }
+    },
+    "IBM": {
+      "complete_days": 251,
+      "first": "2025-09-15",
+      "last": "2026-09-14",
+      "no_data_days": 10,
+      "partial_days": {},
+      "spot": {
+        "status": "cached",
+        "rows": 332
+      }
+    },
+    "MRVL": {
+      "complete_days": 251,
+      "first": "2025-09-15",
+      "last": "2026-09-14",
+      "no_data_days": 10,
+      "partial_days": {},
+      "spot": {
+        "status": "cached",
+        "rows": 332
+      }
+    },
+    "IWM": {
+      "complete_days": 251,
+      "first": "2025-09-15",
+      "last": "2026-09-14",
+      "no_data_days": 10,
+      "partial_days": {},
+      "spot": {
+        "status": "cached",
+        "rows": 332
+      }
+    },
+    "WDC": {
+      "complete_days": 251,
+      "first": "2025-09-15",
+      "last": "2026-09-14",
+      "no_data_days": 10,
+      "partial_days": {},
+      "spot": {
+        "status": "cached",
+        "rows": 332
+      }
+    },
+    "AVGO": {
+      "complete_days": 251,
+      "first": "2025-09-15",
+      "last": "2026-09-14",
+      "no_data_days": 10,
+      "partial_days": {},
+      "spot": {
+        "status": "cached",
+        "rows": 332
+      }
+    },
+    "DRAM": {
+      "complete_days": 110,
+      "first": "2026-04-08",
+      "last": "2026-09-14",
+      "no_data_days": 150,
+      "partial_days": {
+        "2026-04-07": {
+          "eod": "cached",
+          "oi": "no_data"
+        }
+      },
+      "spot": {
+        "status": "cached",
+        "rows": 113
+      }
+    },
+    "GS": {
+      "complete_days": 251,
+      "first": "2025-09-15",
+      "last": "2026-09-14",
+      "no_data_days": 10,
+      "partial_days": {},
+      "spot": {
+        "status": "cached",
+        "rows": 332
+      }
+    },
+    "ARM": {
+      "complete_days": 251,
+      "first": "2025-09-15",
+      "last": "2026-09-14",
+      "no_data_days": 10,
+      "partial_days": {},
+      "spot": {
+        "status": "cached",
+        "rows": 332
+      }
+    },
+    "PLTR": {
+      "complete_days": 251,
+      "first": "2025-09-15",
+      "last": "2026-09-14",
+      "no_data_days": 10,
+      "partial_days": {},
+      "spot": {
+        "status": "cached",
+        "rows": 332
+      }
+    },
+    "GOOG": {
+      "complete_days": 251,
+      "first": "2025-09-15",
+      "last": "2026-09-14",
+      "no_data_days": 10,
+      "partial_days": {},
+      "spot": {
+        "status": "cached",
+        "rows": 332
+      }
+    },
+    "SLV": {
+      "complete_days": 251,
+      "first": "2025-09-15",
+      "last": "2026-09-14",
+      "no_data_days": 10,
+      "partial_days": {},
+      "spot": {
+        "status": "cached",
+        "rows": 332
+      }
+    },
+    "MSTR": {
+      "complete_days": 251,
+      "first": "2025-09-15",
+      "last": "2026-09-14",
+      "no_data_days": 10,
+      "partial_days": {},
+      "spot": {
+        "status": "cached",
+        "rows": 332
+      }
+    },
+    "DELL": {
+      "complete_days": 251,
+      "first": "2025-09-15",
+      "last": "2026-09-14",
+      "no_data_days": 10,
+      "partial_days": {},
+      "spot": {
+        "status": "cached",
+        "rows": 332
+      }
+    },
+    "NFLX": {
+      "complete_days": 251,
+      "first": "2025-09-15",
+      "last": "2026-09-14",
+      "no_data_days": 10,
+      "partial_days": {},
+      "spot": {
+        "status": "cached",
+        "rows": 332
+      }
+    },
+    "CRWV": {
+      "complete_days": 251,
+      "first": "2025-09-15",
+      "last": "2026-09-14",
+      "no_data_days": 10,
+      "partial_days": {},
+      "spot": {
+        "status": "cached",
+        "rows": 332
+      }
+    },
+    "ASTS": {
+      "complete_days": 251,
+      "first": "2025-09-15",
+      "last": "2026-09-14",
+      "no_data_days": 10,
+      "partial_days": {},
+      "spot": {
+        "status": "cached",
+        "rows": 332
+      }
+    },
+    "SKHY": {
+      "complete_days": 43,
+      "first": "2026-07-15",
+      "last": "2026-09-14",
+      "no_data_days": 217,
+      "partial_days": {
+        "2026-07-14": {
+          "eod": "cached",
+          "oi": "no_data"
+        }
+      },
+      "spot": {
+        "status": "cached",
+        "rows": 45
+      }
+    },
+    "ASML": {
+      "complete_days": 251,
+      "first": "2025-09-15",
+      "last": "2026-09-14",
+      "no_data_days": 10,
+      "partial_days": {},
+      "spot": {
+        "status": "cached",
+        "rows": 332
+      }
+    },
+    "EWY": {
+      "complete_days": 251,
+      "first": "2025-09-15",
+      "last": "2026-09-14",
+      "no_data_days": 10,
+      "partial_days": {},
+      "spot": {
+        "status": "cached",
+        "rows": 332
+      }
+    },
+    "STX": {
+      "complete_days": 251,
+      "first": "2025-09-15",
+      "last": "2026-09-14",
+      "no_data_days": 10,
+      "partial_days": {},
+      "spot": {
+        "status": "cached",
+        "rows": 332
+      }
+    },
+    "SPX": {
+      "complete_days": 251,
+      "first": "2025-09-15",
+      "last": "2026-09-14",
+      "no_data_days": 3,
+      "partial_days": {
+        "2025-11-27": {
+          "eod": "cached",
+          "oi": "no_data"
+        },
+        "2026-01-19": {
+          "eod": "cached",
+          "oi": "no_data"
+        },
+        "2026-02-16": {
+          "eod": "cached",
+          "oi": "no_data"
+        },
+        "2026-05-25": {
+          "eod": "cached",
+          "oi": "no_data"
+        },
+        "2026-06-19": {
+          "eod": "cached",
+          "oi": "no_data"
+        },
+        "2026-07-03": {
+          "eod": "cached",
+          "oi": "no_data"
+        },
+        "2026-09-07": {
+          "eod": "cached",
+          "oi": "no_data"
+        }
+      },
+      "spot": {
+        "status": "cached",
+        "rows": 332
+      }
+    },
+    "SPXW": {
+      "complete_days": 251,
+      "first": "2025-09-15",
+      "last": "2026-09-14",
+      "no_data_days": 3,
+      "partial_days": {
+        "2025-11-27": {
+          "eod": "cached",
+          "oi": "no_data"
+        },
+        "2026-01-19": {
+          "eod": "cached",
+          "oi": "no_data"
+        },
+        "2026-02-16": {
+          "eod": "cached",
+          "oi": "no_data"
+        },
+        "2026-05-25": {
+          "eod": "cached",
+          "oi": "no_data"
+        },
+        "2026-06-19": {
+          "eod": "cached",
+          "oi": "no_data"
+        },
+        "2026-07-03": {
+          "eod": "cached",
+          "oi": "no_data"
+        },
+        "2026-09-07": {
+          "eod": "cached",
+          "oi": "no_data"
+        }
+      },
+      "spot": {
+        "status": "cached",
+        "rows": 332
+      }
+    }
+  },
+  "intraday": {
+    "tasks": 546,
+    "ok": 546,
+    "problems": [],
+    "wall_seconds": 607.0
+  },
+  "cache_mb": 1444.9
+}

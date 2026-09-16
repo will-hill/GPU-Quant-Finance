@@ -70,8 +70,10 @@ def session_range_1m(symbol: str = "spy") -> pd.DataFrame | None:
     files = sorted(CACHE.glob(f"{symbol.lower()}_1m_????-??.parquet"))
     if not files:
         return None
-    b = (pl.concat([pl.read_parquet(f) for f in files], how="vertical_relaxed")
-           .with_columns(pl.col("timestamp").dt.date().alias("date"),
+    b = pl.concat([pl.read_parquet(f) for f in files], how="vertical_relaxed")
+    if "close" not in b.columns and "price" in b.columns:          # index roots: one price per minute, no volume
+        b = b.with_columns(pl.col("price").alias("high"), pl.col("price").alias("low"), pl.lit(1).alias("volume"))
+    b = (b.with_columns(pl.col("timestamp").dt.date().alias("date"),
                          (pl.col("timestamp").dt.hour().cast(pl.Int32) * 60 + pl.col("timestamp").dt.minute().cast(pl.Int32)).alias("mod"))
            .filter((pl.col("volume") > 0) & (pl.col("mod") >= 570) & (pl.col("mod") <= 960))
            .group_by("date").agg(pl.col("high").max().alias("high_1m"), pl.col("low").min().alias("low_1m"))

@@ -196,7 +196,7 @@ books, GEX in dollars per 1% move, from `results/cross_section/{sym}_daily.csv`:
 Index and ETF books are put-dominated; the mega-caps are call-dominated and almost never negative, so
 the within-name tests use each name's own GEX terciles rather than the sign. Test results and the
 pooled intraday re-mark tests are in `results/cross_section/summary.json` and the notebook's
-conclusions cell. CROSS_SECTION_RESULTS_PLACEHOLDER
+conclusions cell. Results. Within a name, low GEX goes with a wider next day in 27 of 39 names (median ratio 1.06; SPX 1.50, QQQ 1.39, DRAM 1.37); pooled bottom third 1.046 against top third 0.978, CI [+0.044, +0.090]. That is a market-wide time effect, not a way to pick names: on the same day, names in their own bottom tercile against names in their own top tercile differ by -0.002 (CI [-0.036, +0.032], 207 days), the share of names in their low state on D correlates +0.20 with the market's average relative range on D+1, and ranking names across the cross-section does not order tomorrow's relative range under any key (most negative to most positive bin: GEX per dollar traded 1.019, 0.995, 0.986, 1.019, 1.023; own z-score 0.992, 1.005, 1.010, 0.998, 1.012; raw GEX 1.025, 0.996, 1.008, 1.013, 1.000). Intraday, over 41 names and 115,644 half-hour buckets: mean sign agreement with the next official print 92.2% for the re-marked book against 85.3% stale, better in every name; the re-marked sign leaves the prior close's sign on 14% of name-days. Pooled flips move the next bucket in the predicted direction (negative to positive 1.11 against 1.26, positive to negative 1.23 against 1.10), but at the same date and bucket flipped names are not wider than names that held (-0.009, CI [-0.038, +0.018]; -0.039, CI [-0.056, -0.021]). A multi-name scanner is therefore shown to keep each name's regime current between prints; it is not shown to tell which name will be wider or quieter than its peers.
 
 ## Provenance of the numbers in the conclusions
 
@@ -224,6 +224,14 @@ of `gex_history_spy.ipynb` on this machine; nothing is typed in by hand.
 | episodes | 4 negative runs (2026-07-16, 08-18, 08-28, 09-04), 4 positive runs (2024-06-05, 2024-11-19, 2025-11-25, 2026-08-03) | `eps, info = G.select_episodes(daily, stock)` | `results/episodes.json` |
 | vendor against engine net GEX | corr 0.9992, sign agreement 94.5%, abs difference median $0.72bn, p99 $1.51bn; within 7 days to expiry corr 0.9998, sign agreement 98.3%, abs difference median $0.08bn; vendor put GEX is 0.957 of the engine's on the median day, calls 1.006 | `vd, vstats, vtab = G.vendor_compare(sol)` | `results/vendor_vs_engine.json` |
 | strike band check | 94.97% of abs GEX inside 0.90 to 1.10 S, 0.84% outside 0.80 to 1.20 S, on 2026-07-08 | `day = [d for d in days if d.weekday() == 2][-10]` cell | printed |
+
+Intraday numbers come from the cells of `gex_intraday_spy.ipynb` named by their first line (`t6 = I.t6_remark_tracks_next_print(...)`,
+`t1 = I.t1_intraday_vol(...)`, `t2 = I.t2_remark_vs_stale(ob)`, `t3, flipdays = I.t3_intraday_flips(ob)`, `t4 = I.t4_wall_touches(...)`,
+`t5 = I.t5_time_of_day(ob)`, `t7 = I.t7_model_choice(...)`, `layer = I.zero_dte_layer(...)`) and are stored in `results/intraday_spy.json`.
+GPU timings come from `uv run python gex_history/remark_gpu.py` (`results/remark_timing.json`). Cross-section numbers come from the
+cells of `gex_cross_section.ipynb` (`runs = [X.run_symbol(...)]`, `bytercile = X.next_day_by_tercile(names)`, `pooled = ...`,
+`xs = X.cross_sectional_sort(...)`, `pooled_intra = X.pooled_intraday(intra)`, `same = X.same_day_tests(panel, ob_all)`) and are stored in
+`results/cross_section/summary.json`.
 
 Step 1 numbers (schemas, the OI rule test, history depth, pull timing) come from `uv run python
 gex_history/probe.py`; the pull summary is `results/download_log.json`.
