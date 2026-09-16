@@ -10,8 +10,8 @@
       "first": "2025-09-15",
       "last": "2026-09-14",
       "contracts": 125346,
-      "t_iv_s": 0.615,
-      "t_greeks_s": 0.093,
+      "t_iv_s": 0.566,
+      "t_greeks_s": 0.077,
       "iv_status_ne_0_oi_share": 0.0032830797852156403,
       "resid_p99": 1.855737515654709e-08,
       "share_negative_days": 0.02390438247011952,
@@ -19,7 +19,7 @@
       "median_abs_gex_bn": 0.9655068483235887,
       "flip_found_share": 0.4581673306772908,
       "median_oi_total": 1957092.0,
-      "wall_s": 18.6
+      "wall_s": 15.1
     },
     {
       "symbol": "AMD",
@@ -31,16 +31,16 @@
       "first": "2025-09-15",
       "last": "2026-09-14",
       "contracts": 135062,
-      "t_iv_s": 0.36,
-      "t_greeks_s": 0.048,
+      "t_iv_s": 0.329,
+      "t_greeks_s": 0.047,
       "iv_status_ne_0_oi_share": 0.0006179498529667474,
       "resid_p99": 4.262404189603314e-08,
       "share_negative_days": 0.22709163346613545,
-      "median_gex_bn": 0.09378993473191549,
+      "median_gex_bn": 0.09378993473191548,
       "median_abs_gex_bn": 0.10599190033452908,
       "flip_found_share": 0.6254980079681275,
       "median_oi_total": 694995.0,
-      "wall_s": 12.8
+      "wall_s": 12.3
     },
     {
       "symbol": "AMZN",
@@ -52,7 +52,7 @@
       "first": "2025-09-15",
       "last": "2026-09-14",
       "contracts": 116681,
-      "t_iv_s": 0.274,
+      "t_iv_s": 0.27,
       "t_greeks_s": 0.04,
       "iv_status_ne_0_oi_share": 0.001577286727150276,
       "resid_p99": 1.9031957982917775e-08,
@@ -61,7 +61,7 @@
       "median_abs_gex_bn": 0.405168107370428,
       "flip_found_share": 0.7211155378486056,
       "median_oi_total": 1656627.0,
-      "wall_s": 11.5
+      "wall_s": 11.2
     },
     {
       "symbol": "ARM",
@@ -73,16 +73,16 @@
       "first": "2025-09-15",
       "last": "2026-09-14",
       "contracts": 96136,
-      "t_iv_s": 0.268,
-      "t_greeks_s": 0.039,
+      "t_iv_s": 0.264,
+      "t_greeks_s": 0.035,
       "iv_status_ne_0_oi_share": 0.0007037178217588811,
       "resid_p99": 2.227649233077502e-08,
       "share_negative_days": 0.450199203187251,
-      "median_gex_bn": 0.00234517255883228,
+      "median_gex_bn": 0.0023451725588322808,
       "median_abs_gex_bn": 0.013916860019790622,
       "flip_found_share": 0.4302788844621514,
       "median_oi_total": 201124.0,
-      "wall_s": 10.9
+      "wall_s": 10.8
     },
     {
       "symbol": "ASML",
@@ -94,8 +94,8 @@
       "first": "2025-09-15",
       "last": "2026-09-14",
       "contracts": 221000,
-      "t_iv_s": 1.078,
-      "t_greeks_s": 0.136,
+      "t_iv_s": 0.888,
+      "t_greeks_s": 0.141,
       "iv_status_ne_0_oi_share": 0.0013462211628072753,
       "resid_p99": 1.263934578332738e-07,
       "share_negative_days": 0.30677290836653387,
@@ -103,7 +103,7 @@
       "median_abs_gex_bn": 0.0367921305486907,
       "flip_found_share": 0.8087649402390438,
       "median_oi_total": 58257.0,
-      "wall_s": 20.6
+      "wall_s": 19.5
     },
     {
       "symbol": "ASTS",
@@ -115,16 +115,16 @@
       "first": "2025-09-15",
       "last": "2026-09-14",
       "contracts": 83987,
-      "t_iv_s": 0.225,
-      "t_greeks_s": 0.033,
+      "t_iv_s": 0.199,
+      "t_greeks_s": 0.032,
       "iv_status_ne_0_oi_share": 0.00012899704386297518,
       "resid_p99": 9.758836387874221e-09,
       "share_negative_days": 0.4302788844621514,
-      "median_gex_bn": 0.0012817683566277327,
+      "median_gex_bn": 0.0012817683566277323,
       "median_abs_gex_bn": 0.004886770217180941,
       "flip_found_share": 0.3784860557768924,
       "median_oi_total": 187446.0,
-      "wall_s": 10.6
+      "wall_s": 10.3
     },
     {
       "symbol": "AVGO",
@@ -136,16 +136,16 @@
       "first": "2025-09-15",
       "last": "2026-09-14",
       "contracts": 158020,
-      "t_iv_s": 0.704,
-      "t_greeks_s": 0.109,
+      "t_iv_s": 0.688,
+      "t_greeks_s": 0.099,
       "iv_status_ne_0_oi_share": 0.0008986813467959219,
       "resid_p99": 3.3083660753163715e-08,
       "share_negative_days": 0.29880478087649404,
       "median_gex_bn": 0.08459188360884354,
-      "median_abs_gex_bn": 0.11355035674279647,
+      "median_abs_gex_bn": 0.11355035674279648,
       "flip_found_share": 0.7290836653386454,
       "median_oi_total": 630993.0,
-      "wall_s": 17.3
+      "wall_s": 16.5
     },
     {
       "symbol": "BE",
@@ -157,8 +157,8 @@
       "first": "2025-09-15",
       "last": "2026-09-14",
       "contracts": 99486,
-      "t_iv_s": 0.262,
-      "t_greeks_s": 0.036,
+      "t_iv_s": 0.277,
+      "t_greeks_s": 0.037,
       "iv_status_ne_0_oi_share": 0.00042465361172793934,
       "resid_p99": 2.1959230878110158e-08,
       "share_negative_days": 0.21912350597609562,
@@ -166,7 +166,7 @@
       "median_abs_gex_bn": 0.012796608709364214,
       "flip_found_share": 0.18326693227091634,
       "median_oi_total": 166372.0,
-      "wall_s": 11.5
+      "wall_s": 11.2
     },
     {
       "symbol": "CRWV",
@@ -178,16 +178,16 @@
       "first": "2025-09-15",
       "last": "2026-09-14",
       "contracts": 106707,
-      "t_iv_s": 0.285,
-      "t_greeks_s": 0.039,
+      "t_iv_s": 0.275,
+      "t_greeks_s": 0.043,
       "iv_status_ne_0_oi_share": 0.0001495811145003307,
       "resid_p99": 1.1715354020225256e-08,
       "share_negative_days": 0.41434262948207173,
-      "median_gex_bn": 0.007442066962637702,
+      "median_gex_bn": 0.007442066962637703,
       "median_abs_gex_bn": 0.01869491351259133,
       "flip_found_share": 0.3187250996015936,
       "median_oi_total": 458742.0,
-      "wall_s": 11.7
+      "wall_s": 11.2
     },
     {
       "symbol": "DELL",
@@ -199,8 +199,8 @@
       "first": "2025-09-15",
       "last": "2026-09-14",
       "contracts": 108921,
-      "t_iv_s": 0.48,
-      "t_greeks_s": 0.074,
+      "t_iv_s": 0.547,
+      "t_greeks_s": 0.086,
       "iv_status_ne_0_oi_share": 0.001145483704023057,
       "resid_p99": 3.0307502925097756e-08,
       "share_negative_days": 0.24302788844621515,
@@ -220,8 +220,8 @@
       "first": "2026-04-08",
       "last": "2026-09-14",
       "contracts": 43595,
-      "t_iv_s": 0.126,
-      "t_greeks_s": 0.019,
+      "t_iv_s": 0.12,
+      "t_greeks_s": 0.018,
       "iv_status_ne_0_oi_share": 0.000226773000226773,
       "resid_p99": 6.774036611645329e-09,
       "share_negative_days": 0.24545454545454545,
@@ -229,7 +229,7 @@
       "median_abs_gex_bn": 0.013555756556820842,
       "flip_found_share": 0.35454545454545455,
       "median_oi_total": 552457.0,
-      "wall_s": 7.8
+      "wall_s": 7.6
     },
     {
       "symbol": "EWY",
@@ -241,8 +241,8 @@
       "first": "2025-09-15",
       "last": "2026-09-14",
       "contracts": 86222,
-      "t_iv_s": 0.404,
-      "t_greeks_s": 0.06,
+      "t_iv_s": 0.352,
+      "t_greeks_s": 0.061,
       "iv_status_ne_0_oi_share": 0.002339110324131662,
       "resid_p99": 1.624816043488398e-08,
       "share_negative_days": 0.3426294820717131,
@@ -250,7 +250,7 @@
       "median_abs_gex_bn": 0.02462246744729383,
       "flip_found_share": 0.38247011952191234,
       "median_oi_total": 257459.0,
-      "wall_s": 12.0
+      "wall_s": 12.3
     },
     {
       "symbol": "GLD",
@@ -262,8 +262,8 @@
       "first": "2025-09-15",
       "last": "2026-09-14",
       "contracts": 483340,
-      "t_iv_s": 1.1,
-      "t_greeks_s": 0.154,
+      "t_iv_s": 1.134,
+      "t_greeks_s": 0.155,
       "iv_status_ne_0_oi_share": 0.013348842218055062,
       "resid_p99": 2.4242127132367864e-08,
       "share_negative_days": 0.1952191235059761,
@@ -271,7 +271,7 @@
       "median_abs_gex_bn": 1.382400374407556,
       "flip_found_share": 0.7410358565737052,
       "median_oi_total": 2601935.0,
-      "wall_s": 22.4
+      "wall_s": 21.7
     },
     {
       "symbol": "GOOG",
@@ -283,8 +283,8 @@
       "first": "2025-09-15",
       "last": "2026-09-14",
       "contracts": 120193,
-      "t_iv_s": 0.517,
-      "t_greeks_s": 0.083,
+      "t_iv_s": 0.492,
+      "t_greeks_s": 0.079,
       "iv_status_ne_0_oi_share": 0.003831969921787044,
       "resid_p99": 2.5783099886211862e-08,
       "share_negative_days": 0.20717131474103587,
@@ -292,7 +292,7 @@
       "median_abs_gex_bn": 0.15290551104881658,
       "flip_found_share": 0.649402390438247,
       "median_oi_total": 656712.0,
-      "wall_s": 14.3
+      "wall_s": 14.6
     },
     {
       "symbol": "GOOGL",
@@ -304,8 +304,8 @@
       "first": "2025-09-15",
       "last": "2026-09-14",
       "contracts": 149985,
-      "t_iv_s": 0.638,
-      "t_greeks_s": 0.099,
+      "t_iv_s": 0.663,
+      "t_greeks_s": 0.098,
       "iv_status_ne_0_oi_share": 0.002788865118235767,
       "resid_p99": 2.4999254648605526e-08,
       "share_negative_days": 0.11155378486055777,
@@ -313,7 +313,7 @@
       "median_abs_gex_bn": 0.29551812844384323,
       "flip_found_share": 0.5816733067729084,
       "median_oi_total": 951295.0,
-      "wall_s": 16.0
+      "wall_s": 15.9
     },
     {
       "symbol": "GS",
@@ -325,8 +325,8 @@
       "first": "2025-09-15",
       "last": "2026-09-14",
       "contracts": 236916,
-      "t_iv_s": 0.991,
-      "t_greeks_s": 0.156,
+      "t_iv_s": 1.023,
+      "t_greeks_s": 0.153,
       "iv_status_ne_0_oi_share": 0.0012851379597303275,
       "resid_p99": 7.352442793262526e-08,
       "share_negative_days": 0.3187250996015936,
@@ -334,7 +334,7 @@
       "median_abs_gex_bn": 0.048598454600555,
       "flip_found_share": 0.9163346613545816,
       "median_oi_total": 114745.0,
-      "wall_s": 20.4
+      "wall_s": 20.8
     },
     {
       "symbol": "IBM",
@@ -346,16 +346,16 @@
       "first": "2025-09-15",
       "last": "2026-09-14",
       "contracts": 86610,
-      "t_iv_s": 0.449,
-      "t_greeks_s": 0.063,
+      "t_iv_s": 0.425,
+      "t_greeks_s": 0.061,
       "iv_status_ne_0_oi_share": 0.0005415908950019803,
       "resid_p99": 2.1649560579817254e-08,
       "share_negative_days": 0.22310756972111553,
-      "median_gex_bn": 0.023721847327657305,
+      "median_gex_bn": 0.02372184732765731,
       "median_abs_gex_bn": 0.027552916872971008,
       "flip_found_share": 0.7768924302788844,
       "median_oi_total": 192276.0,
-      "wall_s": 12.9
+      "wall_s": 13.3
     },
     {
       "symbol": "INTC",
@@ -367,8 +367,8 @@
       "first": "2025-09-15",
       "last": "2026-09-14",
       "contracts": 106714,
-      "t_iv_s": 0.243,
-      "t_greeks_s": 0.04,
+      "t_iv_s": 0.267,
+      "t_greeks_s": 0.039,
       "iv_status_ne_0_oi_share": 0.0005632954948685217,
       "resid_p99": 8.893676337606783e-09,
       "share_negative_days": 0.11155378486055777,
@@ -376,7 +376,7 @@
       "median_abs_gex_bn": 0.04525610277717323,
       "flip_found_share": 0.2788844621513944,
       "median_oi_total": 1308433.0,
-      "wall_s": 10.8
+      "wall_s": 10.7
     },
     {
       "symbol": "IWM",
@@ -388,8 +388,8 @@
       "first": "2025-09-15",
       "last": "2026-09-14",
       "contracts": 374706,
-      "t_iv_s": 1.6,
-      "t_greeks_s": 0.235,
+      "t_iv_s": 1.611,
+      "t_greeks_s": 0.238,
       "iv_status_ne_0_oi_share": 0.0028557594321632867,
       "resid_p99": 1.4810909263474047e-08,
       "share_negative_days": 0.8167330677290837,
@@ -397,7 +397,7 @@
       "median_abs_gex_bn": 1.0214203451981774,
       "flip_found_share": 0.9960159362549801,
       "median_oi_total": 4444237.0,
-      "wall_s": 27.1
+      "wall_s": 27.2
     },
     {
       "symbol": "META",
@@ -409,8 +409,8 @@
       "first": "2025-09-15",
       "last": "2026-09-14",
       "contracts": 275052,
-      "t_iv_s": 1.179,
-      "t_greeks_s": 0.186,
+      "t_iv_s": 1.215,
+      "t_greeks_s": 0.181,
       "iv_status_ne_0_oi_share": 0.0011372866073093174,
       "resid_p99": 5.318463962566965e-08,
       "share_negative_days": 0.2948207171314741,
@@ -418,7 +418,7 @@
       "median_abs_gex_bn": 0.281928798465016,
       "flip_found_share": 0.8884462151394422,
       "median_oi_total": 810630.0,
-      "wall_s": 22.5
+      "wall_s": 22.7
     },
     {
       "symbol": "MRVL",
@@ -430,8 +430,8 @@
       "first": "2025-09-15",
       "last": "2026-09-14",
       "contracts": 91005,
-      "t_iv_s": 0.24,
-      "t_greeks_s": 0.039,
+      "t_iv_s": 0.224,
+      "t_greeks_s": 0.032,
       "iv_status_ne_0_oi_share": 0.0007128352226610255,
       "resid_p99": 1.7535842786742146e-08,
       "share_negative_days": 0.23904382470119523,
@@ -439,7 +439,7 @@
       "median_abs_gex_bn": 0.0220718403858114,
       "flip_found_share": 0.44621513944223107,
       "median_oi_total": 344998.0,
-      "wall_s": 10.4
+      "wall_s": 10.2
     },
     {
       "symbol": "MSFT",
@@ -451,8 +451,8 @@
       "first": "2025-09-15",
       "last": "2026-09-14",
       "contracts": 190028,
-      "t_iv_s": 0.788,
-      "t_greeks_s": 0.119,
+      "t_iv_s": 0.865,
+      "t_greeks_s": 0.118,
       "iv_status_ne_0_oi_share": 0.0021384453071948955,
       "resid_p99": 3.257915246024368e-08,
       "share_negative_days": 0.19123505976095617,
@@ -460,7 +460,7 @@
       "median_abs_gex_bn": 0.43241102533206643,
       "flip_found_share": 0.7808764940239044,
       "median_oi_total": 1263413.0,
-      "wall_s": 17.8
+      "wall_s": 18.2
     },
     {
       "symbol": "MSTR",
@@ -472,8 +472,8 @@
       "first": "2025-09-15",
       "last": "2026-09-14",
       "contracts": 109800,
-      "t_iv_s": 0.337,
-      "t_greeks_s": 0.039,
+      "t_iv_s": 0.297,
+      "t_greeks_s": 0.032,
       "iv_status_ne_0_oi_share": 0.00012424974400622677,
       "resid_p99": 2.0876534776448318e-08,
       "share_negative_days": 0.15139442231075698,
@@ -493,8 +493,8 @@
       "first": "2025-09-15",
       "last": "2026-09-14",
       "contracts": 185834,
-      "t_iv_s": 0.785,
-      "t_greeks_s": 0.124,
+      "t_iv_s": 0.802,
+      "t_greeks_s": 0.12,
       "iv_status_ne_0_oi_share": 0.0005760187878178978,
       "resid_p99": 9.093312570485069e-08,
       "share_negative_days": 0.18725099601593626,
@@ -502,7 +502,7 @@
       "median_abs_gex_bn": 0.09997758653696433,
       "flip_found_share": 0.41832669322709165,
       "median_oi_total": 492832.0,
-      "wall_s": 18.1
+      "wall_s": 18.3
     },
     {
       "symbol": "NBIS",
@@ -514,8 +514,8 @@
       "first": "2025-09-15",
       "last": "2026-09-14",
       "contracts": 98129,
-      "t_iv_s": 0.256,
-      "t_greeks_s": 0.039,
+      "t_iv_s": 0.26,
+      "t_greeks_s": 0.035,
       "iv_status_ne_0_oi_share": 0.0005151261607951706,
       "resid_p99": 1.7767891336006852e-08,
       "share_negative_days": 0.38247011952191234,
@@ -535,16 +535,16 @@
       "first": "2025-09-15",
       "last": "2026-09-14",
       "contracts": 151541,
-      "t_iv_s": 0.383,
-      "t_greeks_s": 0.051,
+      "t_iv_s": 0.374,
+      "t_greeks_s": 0.052,
       "iv_status_ne_0_oi_share": 0.001101487231787434,
       "resid_p99": 3.762128386597399e-08,
       "share_negative_days": 0.5099601593625498,
-      "median_gex_bn": -0.002283888938449083,
+      "median_gex_bn": -0.0022838889384490866,
       "median_abs_gex_bn": 0.05450241967782633,
       "flip_found_share": 0.9083665338645418,
       "median_oi_total": 1273678.0,
-      "wall_s": 12.7
+      "wall_s": 12.6
     },
     {
       "symbol": "NVDA",
@@ -556,8 +556,8 @@
       "first": "2025-09-15",
       "last": "2026-09-14",
       "contracts": 122940,
-      "t_iv_s": 0.546,
-      "t_greeks_s": 0.079,
+      "t_iv_s": 0.629,
+      "t_greeks_s": 0.096,
       "iv_status_ne_0_oi_share": 0.0011113449304439868,
       "resid_p99": 1.8434077446727366e-08,
       "share_negative_days": 0.05179282868525897,
@@ -565,7 +565,7 @@
       "median_abs_gex_bn": 0.7976348383268332,
       "flip_found_share": 0.7330677290836654,
       "median_oi_total": 4455028.0,
-      "wall_s": 14.7
+      "wall_s": 14.8
     },
     {
       "symbol": "ORCL",
@@ -577,16 +577,16 @@
       "first": "2025-09-15",
       "last": "2026-09-14",
       "contracts": 94718,
-      "t_iv_s": 0.416,
-      "t_greeks_s": 0.06,
+      "t_iv_s": 0.42,
+      "t_greeks_s": 0.067,
       "iv_status_ne_0_oi_share": 0.00041952139919328814,
       "resid_p99": 2.0600667767212126e-08,
       "share_negative_days": 0.5139442231075697,
-      "median_gex_bn": -0.0031886262913942993,
+      "median_gex_bn": -0.0031886262913943027,
       "median_abs_gex_bn": 0.0515013841374954,
       "flip_found_share": 0.6533864541832669,
       "median_oi_total": 640527.0,
-      "wall_s": 13.4
+      "wall_s": 13.3
     },
     {
       "symbol": "PLTR",
@@ -598,8 +598,8 @@
       "first": "2025-09-15",
       "last": "2026-09-14",
       "contracts": 98132,
-      "t_iv_s": 0.24,
-      "t_greeks_s": 0.033,
+      "t_iv_s": 0.255,
+      "t_greeks_s": 0.037,
       "iv_status_ne_0_oi_share": 0.0008201609737622505,
       "resid_p99": 1.6638027062754175e-08,
       "share_negative_days": 0.23904382470119523,
@@ -607,7 +607,7 @@
       "median_abs_gex_bn": 0.08614487772118758,
       "flip_found_share": 0.7410358565737052,
       "median_oi_total": 940436.0,
-      "wall_s": 11.0
+      "wall_s": 11.1
     },
     {
       "symbol": "QQQ",
@@ -619,16 +619,16 @@
       "first": "2025-09-15",
       "last": "2026-09-14",
       "contracts": 781290,
-      "t_iv_s": 3.241,
-      "t_greeks_s": 0.404,
+      "t_iv_s": 3.262,
+      "t_greeks_s": 0.448,
       "iv_status_ne_0_oi_share": 0.0020486794665378794,
       "resid_p99": 3.853712058798921e-08,
       "share_negative_days": 0.5896414342629482,
       "median_gex_bn": -0.8603438824727928,
-      "median_abs_gex_bn": 2.369827581293563,
+      "median_abs_gex_bn": 2.3698275812935634,
       "flip_found_share": 1.0,
       "median_oi_total": 4914446.0,
-      "wall_s": 46.1
+      "wall_s": 46.6
     },
     {
       "symbol": "SKHY",
@@ -640,12 +640,12 @@
       "first": "2026-07-15",
       "last": "2026-09-14",
       "contracts": 15905,
-      "t_iv_s": 0.048,
+      "t_iv_s": 0.044,
       "t_greeks_s": 0.007,
       "iv_status_ne_0_oi_share": 0.0004450344336958834,
       "resid_p99": 1.8081002295389197e-08,
       "share_negative_days": 0.5116279069767442,
-      "median_gex_bn": -0.0013705191651131301,
+      "median_gex_bn": -0.0013705191651131304,
       "median_abs_gex_bn": 0.011106230594564304,
       "flip_found_share": 0.4883720930232558,
       "median_oi_total": 254204.0,
@@ -661,13 +661,13 @@
       "first": "2025-09-15",
       "last": "2026-09-14",
       "contracts": 240490,
-      "t_iv_s": 0.623,
-      "t_greeks_s": 0.086,
+      "t_iv_s": 0.522,
+      "t_greeks_s": 0.083,
       "iv_status_ne_0_oi_share": 0.018314392776264156,
       "resid_p99": 6.441533777490344e-09,
       "share_negative_days": 0.1593625498007968,
-      "median_gex_bn": 0.0881518368756095,
-      "median_abs_gex_bn": 0.0881518368756095,
+      "median_gex_bn": 0.08815183687560951,
+      "median_abs_gex_bn": 0.08815183687560951,
       "flip_found_share": 0.32270916334661354,
       "median_oi_total": 2573494.0,
       "wall_s": 15.5
@@ -682,16 +682,16 @@
       "first": "2025-09-15",
       "last": "2026-09-14",
       "contracts": 192267,
-      "t_iv_s": 0.905,
-      "t_greeks_s": 0.121,
+      "t_iv_s": 0.819,
+      "t_greeks_s": 0.126,
       "iv_status_ne_0_oi_share": 0.0008796320628126913,
       "resid_p99": 4.356339964317617e-08,
       "share_negative_days": 0.6613545816733067,
       "median_gex_bn": -0.06693653885631841,
-      "median_abs_gex_bn": 0.10006628829884058,
+      "median_abs_gex_bn": 0.1000662882988406,
       "flip_found_share": 0.8844621513944223,
       "median_oi_total": 570476.0,
-      "wall_s": 18.4
+      "wall_s": 18.1
     },
     {
       "symbol": "SNDK",
@@ -703,16 +703,16 @@
       "first": "2025-09-15",
       "last": "2026-09-14",
       "contracts": 211692,
-      "t_iv_s": 0.552,
-      "t_greeks_s": 0.077,
+      "t_iv_s": 0.542,
+      "t_greeks_s": 0.072,
       "iv_status_ne_0_oi_share": 0.00018649887775903858,
       "resid_p99": 1.5642789378489372e-07,
       "share_negative_days": 0.33067729083665337,
-      "median_gex_bn": 0.005515772748178465,
+      "median_gex_bn": 0.005515772748178467,
       "median_abs_gex_bn": 0.0232895823088886,
       "flip_found_share": 0.4262948207171315,
       "median_oi_total": 93135.0,
-      "wall_s": 15.0
+      "wall_s": 14.8
     },
     {
       "symbol": "SOXL",
@@ -724,8 +724,8 @@
       "first": "2025-09-15",
       "last": "2026-09-14",
       "contracts": 112935,
-      "t_iv_s": 0.305,
-      "t_greeks_s": 0.038,
+      "t_iv_s": 0.284,
+      "t_greeks_s": 0.04,
       "iv_status_ne_0_oi_share": 0.00015289853331551962,
       "resid_p99": 2.064129708170826e-08,
       "share_negative_days": 0.2868525896414343,
@@ -745,16 +745,16 @@
       "first": "2025-09-15",
       "last": "2026-09-14",
       "contracts": 27108,
-      "t_iv_s": 0.077,
-      "t_greeks_s": 0.012,
+      "t_iv_s": 0.076,
+      "t_greeks_s": 0.011,
       "iv_status_ne_0_oi_share": 0.0006896649027918981,
       "resid_p99": 1.573990132897048e-08,
       "share_negative_days": 0.6296296296296297,
       "median_gex_bn": -9.109838193637441e-08,
-      "median_abs_gex_bn": 0.03874131498433714,
+      "median_abs_gex_bn": 0.03874131498433713,
       "flip_found_share": 0.3950617283950617,
       "median_oi_total": 793003.0,
-      "wall_s": 7.6
+      "wall_s": 7.5
     },
     {
       "symbol": "STX",
@@ -766,16 +766,16 @@
       "first": "2025-09-15",
       "last": "2026-09-14",
       "contracts": 133495,
-      "t_iv_s": 0.602,
-      "t_greeks_s": 0.094,
+      "t_iv_s": 0.631,
+      "t_greeks_s": 0.092,
       "iv_status_ne_0_oi_share": 0.0003061577353828384,
       "resid_p99": 7.992710848725579e-08,
       "share_negative_days": 0.23107569721115537,
-      "median_gex_bn": 0.006578508779882581,
+      "median_gex_bn": 0.0065785087798825815,
       "median_abs_gex_bn": 0.008181945220185519,
       "flip_found_share": 0.4262948207171315,
       "median_oi_total": 42175.0,
-      "wall_s": 15.7
+      "wall_s": 15.8
     },
     {
       "symbol": "TSLA",
@@ -787,8 +787,8 @@
       "first": "2025-09-15",
       "last": "2026-09-14",
       "contracts": 212763,
-      "t_iv_s": 0.539,
-      "t_greeks_s": 0.07,
+      "t_iv_s": 0.537,
+      "t_greeks_s": 0.076,
       "iv_status_ne_0_oi_share": 0.0004549242940791552,
       "resid_p99": 4.427615579061211e-08,
       "share_negative_days": 0.20318725099601595,
@@ -796,7 +796,7 @@
       "median_abs_gex_bn": 0.2703861122759958,
       "flip_found_share": 0.8087649402390438,
       "median_oi_total": 1440902.0,
-      "wall_s": 14.8
+      "wall_s": 15.0
     },
     {
       "symbol": "TSM",
@@ -808,8 +808,8 @@
       "first": "2025-09-15",
       "last": "2026-09-14",
       "contracts": 114291,
-      "t_iv_s": 0.585,
-      "t_greeks_s": 0.079,
+      "t_iv_s": 0.533,
+      "t_greeks_s": 0.069,
       "iv_status_ne_0_oi_share": 0.00042146811203875277,
       "resid_p99": 3.4103188184531036e-08,
       "share_negative_days": 0.32669322709163345,
@@ -817,7 +817,7 @@
       "median_abs_gex_bn": 0.0821694724579264,
       "flip_found_share": 0.8725099601593626,
       "median_oi_total": 576431.0,
-      "wall_s": 14.7
+      "wall_s": 14.5
     },
     {
       "symbol": "WDC",
@@ -829,8 +829,8 @@
       "first": "2025-09-15",
       "last": "2026-09-14",
       "contracts": 118711,
-      "t_iv_s": 0.544,
-      "t_greeks_s": 0.082,
+      "t_iv_s": 0.516,
+      "t_greeks_s": 0.081,
       "iv_status_ne_0_oi_share": 0.0003813703164753054,
       "resid_p99": 4.73718193916283e-08,
       "share_negative_days": 0.2589641434262948,
@@ -838,7 +838,7 @@
       "median_abs_gex_bn": 0.01321138286242262,
       "flip_found_share": 0.2788844621513944,
       "median_oi_total": 77469.0,
-      "wall_s": 14.4
+      "wall_s": 14.5
     },
     {
       "symbol": "SPX",
@@ -851,16 +851,16 @@
       "first": "2025-09-15",
       "last": "2026-09-14",
       "contracts": 2704554,
-      "t_iv_s": 0.063,
-      "t_greeks_s": 0.021,
+      "t_iv_s": 0.06,
+      "t_greeks_s": 0.016,
       "iv_status_ne_0_oi_share": 0.005980008761984345,
       "resid_p99": 3.3739139098543e-07,
       "share_negative_days": 0.38247011952191234,
-      "median_gex_bn": 14.552762265855758,
+      "median_gex_bn": 14.552762265855762,
       "median_abs_gex_bn": 32.17736079652443,
       "flip_found_share": 1.0,
       "median_oi_total": 9005490.0,
-      "wall_s": 127.8
+      "wall_s": 128.2
     }
   ]
 }

@@ -59,7 +59,7 @@ def row2(ctx):
     horizons = {}
     for k, lab in ((0, "10:00"), (1, "10:30"), (3, "11:30"), (5, "12:30"), (8, "14:00")):
         horizons[lab] = {}
-        for h, hl in ((1, "next 30 min"), (2, "next 1 h"), (4, "next 2 h"), (None, "rest of day")):
+        for h, hl in ((1, "next 30 minutes"), (2, "next hour"), (4, "next 2 hours"), (None, "rest of day")):
             y = fwd(k, h); x = Gx[k]; m = x.notna() & y.notna()
             horizons[lab][hl] = (float(spearmanr(x[m], y[m]).correlation), float(spearmanr(stale.reindex(x.index)[m], y[m]).correlation))
     x = Gx[0]; y = fwd(0, None); m = x.notna() & y.notna(); x, y = x[m], y[m]
@@ -80,7 +80,7 @@ def fig2(ctx, res, path=None):
     ax1.bar(range(3), [t[k] for k in keys], color=[G.ORANGE, G.DIM2, G.CYAN], width=0.6, lw=0)
     for i, k in enumerate(keys): ax1.text(i, t[k] + 0.03, f"{t[k]:.2f} times", ha="center", color=G.FG)
     ax1.set_xticks(range(3)); ax1.set_xticklabels(keys, fontsize=10); ax1.set_xlabel("live GEX at 10:00, terciles")
-    ax1.set_ylabel("rest-of-day range, multiple of time-of-day median"); ax1.set_title(f"{ctx['sym']}: level at 10:00 sets the day", loc="left", fontsize=14)
+    ax1.set_ylabel("rest-of-day range, multiple of time-of-day median"); ax1.set_title(f"{ctx['sym']}: rest-of-day range by live GEX at 10:00", loc="left", fontsize=13)
     s = res["rest_of_day_by_sign_and_size"]; order = ["negative large", "negative medium", "negative small", "positive small", "positive medium", "positive large"]
     vals = [s.get(k, np.nan) for k in order]
     ax2.bar(range(6), vals, color=[G.ORANGE] * 3 + [G.CYAN] * 3, width=0.6, lw=0)
@@ -115,7 +115,7 @@ def fig3(ctx, res, path=None):
     ax.plot(ks, [bb[k][1] for k in ks], marker="o", color=G.DIM, lw=2, label="stale previous-close print")
     ax.set_xticks(ks); ax.set_xticklabels([f"{(570 + 30 * (k + 1)) // 60:02d}:{(570 + 30 * (k + 1)) % 60:02d}" for k in ks], fontsize=9)
     ax.set_xlabel("bucket close, ET"); ax.set_ylabel("Spearman with the next bucket's adjusted range")
-    ax.set_title(f"{ctx['sym']}: the live value's edge grows through the day", loc="left"); ax.legend(loc="lower right")
+    ax.set_title(f"{ctx['sym']}: correlation with the next bucket's range, live against stale", loc="left", fontsize=13); ax.legend(loc="lower right")
     if path: fig.savefig(path, bbox_inches="tight", pad_inches=0.25)
     return fig
 
@@ -153,7 +153,7 @@ def fig6(ctx, res, path=None):
     bins = np.arange(0.5, max(runs["length"].max(), 10) + 1.5, 1)
     ax.hist(runs.loc[runs["sign"] == 1, "length"], bins=bins, color=G.CYAN, alpha=0.8, label=f"positive runs (n {int((runs['sign'] == 1).sum())})")
     ax.hist(runs.loc[runs["sign"] == -1, "length"], bins=bins, color=G.ORANGE, alpha=0.6, label=f"negative runs (n {int((runs['sign'] == -1).sum())})")
-    ax.set_xlabel("run length, trading days"); ax.set_ylabel("count of runs"); ax.set_title(f"{ctx['sym']}: the sign holds {res['p_same_sign_next_day']:.0%} of days", loc="left"); ax.legend()
+    ax.set_xlabel("run length, trading days"); ax.set_ylabel("count of runs"); ax.set_title(f"{ctx['sym']}: run lengths of the GEX sign (same sign next day {res['p_same_sign_next_day']:.0%} of days)", loc="left", fontsize=13); ax.legend()
     if path: fig.savefig(path, bbox_inches="tight", pad_inches=0.25)
     return fig
 
@@ -220,7 +220,7 @@ def fig10(ctx, res, path=None):
     ax.bar(xs + w / 2, [res[f"top{n}_ranges_after_negative"] * 100 for n in ns], width=w, color=G.PURPLE, lw=0, label="widest next-day ranges after a negative close")
     ax.axhline(res["base_share_negative"] * 100, color=G.FG, ls="--", lw=1, label=f"base rate of negative closes {res['base_share_negative']:.0%}")
     ax.set_xticks(xs); ax.set_xticklabels([f"top {n}" for n in ns]); ax.set_ylabel("share, %"); ax.set_ylim(0, 105)
-    ax.set_title(f"{ctx['sym']}: the tails sit in the negative regime", loc="left"); ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.1), ncol=3, fontsize=9)
+    ax.set_title(f"{ctx['sym']}: share of the largest next-day moves after a negative close", loc="left", fontsize=13); ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.1), ncol=3, fontsize=9)
     if path: fig.savefig(path, bbox_inches="tight", pad_inches=0.25)
     return fig
 
@@ -246,8 +246,7 @@ import polars as pl  # noqa: E402
 
 
 def fig_open1(ctx, res, path=None):
-    """One day where yesterday's report said calm, the live reading turned during the day, and the official
-    next report confirmed it."""
+    """One day: yesterday's report, the live reading during the day, and the official next report."""
     import matplotlib.pyplot as plt
     G.style()
     d = ctx["daily"].copy(); ob = ctx["ob"]
@@ -258,7 +257,7 @@ def fig_open1(ctx, res, path=None):
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(G.FIG_W, G.FIG_H), sharex=False, gridspec_kw={"height_ratios": [1.2, 1.0], "hspace": 0.35})
     x = b["mod"] / 60.0
     ax1.plot(x, b["close"], color=G.FG, lw=1.6)
-    ax1.set_ylabel(f"{ctx['sym']} price, $"); ax1.set_title(f"{pd.Timestamp(day):%d %B %Y}: the report said calm, the live reading said otherwise", loc="left", fontsize=14)
+    ax1.set_ylabel(f"{ctx['sym']} price, $"); ax1.set_title(f"{pd.Timestamp(day):%d %B %Y}: yesterday's report, the live reading during the day, tonight's report", loc="left", fontsize=13)
     ax1.set_xticks(range(10, 17)); ax1.set_xticklabels([f"{h:02d}:00" for h in range(10, 17)]); ax1.set_xlim(9.4, 16.1)
     ax1.text(0.99, 0.95, f"{ctx['sym']} {d.loc[day, 'ret_cc'] * 100:+.1f}% on the day", transform=ax1.transAxes, ha="right", va="top", color=G.FG, fontsize=11)
     xb = (570 + 30 * (o["bucket"] + 1)) / 60.0
@@ -267,14 +266,14 @@ def fig_open1(ctx, res, path=None):
     ax2.scatter([16.0], [d.loc[day, "gex_net_usd"] / 1e9], color=G.ORANGE, s=90, zorder=5, label=f"tonight's official report: {d.loc[day, 'gex_net_usd'] / 1e9:+.1f} billion")
     ax2.axhline(0, color=G.FG, lw=0.8)
     ax2.set_ylabel("gamma exposure\nbillion $ per 1% move"); ax2.set_xticks(range(10, 17)); ax2.set_xticklabels([f"{h:02d}:00" for h in range(10, 17)]); ax2.set_xlim(9.4, 16.1)
-    ax2.text(0.01, 0.06, "above zero: dealers calm the market.  below zero: dealers amplify it.", transform=ax2.transAxes, color=G.DIM, fontsize=9.5)
+    ax2.text(0.01, 0.06, "above zero: dealer hedging damps moves.  below zero: it amplifies them.", transform=ax2.transAxes, color=G.DIM, fontsize=9.5)
     ax2.legend(loc="upper right", fontsize=9)
     if path: fig.savefig(path, bbox_inches="tight", pad_inches=0.25)
     return fig
 
 
 def fig_open2(ctx, res, path=None):
-    """Read the gauge at 10:00: the rest of the day's range in percent, and one example day of each kind."""
+    """Rest-of-day range by the live reading at 10:00, in percent, and one example day of each kind."""
     import matplotlib.pyplot as plt
     G.style()
     ob = ctx["ob"]
@@ -288,15 +287,15 @@ def fig_open2(ctx, res, path=None):
     ax1.bar(range(3), means.values, color=[G.ORANGE, G.DIM2, G.CYAN], width=0.6, lw=0)
     for i, v in enumerate(means.values): ax1.text(i, v + 0.03, f"{v:.2f}%", ha="center", color=G.FG, fontsize=12)
     ax1.set_xticks(range(3)); ax1.set_xticklabels(["low gamma\nat 10:00", "middle", "high gamma\nat 10:00"], fontsize=10)
-    ax1.set_ylabel(f"{ctx['sym']} high-to-low range, 10:00 to close, %"); ax1.set_title("Read the gauge at 10:00", loc="left", fontsize=14)
+    ax1.set_ylabel(f"{ctx['sym']} high-to-low range, 10:00 to close, %"); ax1.set_title("Rest-of-day range\nby the live reading at 10:00", loc="left", fontsize=12)
     ax1.set_ylim(0, means.max() * 1.25)
     # example days: median-range day within the high third and within the low third
     for lab, c in (("high", G.CYAN), ("low", G.ORANGE)):
         sub = rest[q == lab]["range_pct"]; day = (sub - sub.median()).abs().idxmin()
         b = _day_path(ctx, day); ax2.plot(b["mod"] / 60.0, _pct_from_open(b), color=c, lw=1.8, label=f"{lab} gamma at 10:00, {pd.Timestamp(day):%d %b %Y}: range {rest.loc[day, 'range_pct']:.2f}%")
-    ax2.axvline(10.0, color=G.PURPLE, ls=":", lw=1.5); ax2.text(10.05, ax2.get_ylim()[1] * 0.9 if ax2.get_ylim()[1] > 0 else 0.5, "10:00 reading", color=G.PURPLE, fontsize=9)
+    ax2.axvline(10.0, color=G.PURPLE, ls=":", lw=1.5); yl = ax2.get_ylim(); ax2.text(10.05, yl[0] + 0.62 * (yl[1] - yl[0]), "10:00 reading", color=G.PURPLE, fontsize=9)
     ax2.set_xticks(range(10, 17)); ax2.set_xticklabels([f"{h:02d}:00" for h in range(10, 17)]); ax2.set_ylabel("move from the open, %")
-    ax2.set_title("What the rest of the day looked like", loc="left", fontsize=14); ax2.legend(loc="upper left", fontsize=8.5)
+    ax2.set_title("Two example days", loc="left", fontsize=12); ax2.legend(loc="upper left", fontsize=8.5)
     if path: fig.savefig(path, bbox_inches="tight", pad_inches=0.25)
     return fig
 
@@ -317,9 +316,9 @@ def fig_open3(ctx, res, path=None):
     ax2.plot(xb, o["gex_live"] / 1e9, marker="o", color=G.CYAN, lw=2, label="live gamma reading")
     ax2.axhline(o["gex_prev"].iloc[0] / 1e9, color=G.DIM, ls="--", lw=1.5, label="yesterday's report")
     ax2.axhline(0, color=G.FG, lw=0.6); ax2.set_ylabel("gamma exposure, billion $ per 1% move"); ax2.grid(False)
-    ax.set_title(f"{pd.Timestamp(day):%d %B %Y}: the forecast that updates every half hour", loc="left", fontsize=14, pad=22)
+    ax.set_title(f"{pd.Timestamp(day):%d %B %Y}: half-hour ranges and the live reading", loc="left", fontsize=13, pad=22)
     h1, l1 = ax.get_legend_handles_labels(); h2, l2 = ax2.get_legend_handles_labels(); ax.legend(h1 + h2, l1 + l2, loc="upper right", fontsize=9)
-    ax.text(0.0, 1.01, "lower reading, bigger bars: the live line moves with the day, the dashed line cannot", transform=ax.transAxes, color=G.DIM, fontsize=9.5, va="bottom")
+    ax.text(0.0, 1.01, "bars: range of each half hour.  line: live gamma reading at the bucket close.  dashed: yesterday's report.", transform=ax.transAxes, color=G.DIM, fontsize=9.5, va="bottom")
     if path: fig.savefig(path, bbox_inches="tight", pad_inches=0.25)
     return fig
 
@@ -346,16 +345,16 @@ def fig_open4(ctx, res, path=None):
         ax.plot(b["mod"] / 60.0, (b["close"] / S0 - 1.0) * 100.0, color=G.FG, lw=1.6)
         ax.axhline((o["flip_prev"].iloc[0] / S0 - 1.0) * 100.0, color=G.PURPLE, ls=":", lw=2, label="flip level from last night's book")
         ax.axvline(t_cross, color=c, ls="--", lw=1.5, label=f"{lab} at {int(t_cross):02d}:{int(round((t_cross % 1) * 60)):02d}")
-        ax.set_title(f"{pd.Timestamp(day):%d %b %Y}: {lab}", loc="left", fontsize=13)
-        ax.text(0.02, 0.97, f"a typical crossing day\nrange from 10:00 to the close: {rest.loc[day, 'range_pct']:.2f}%\ndays that never crossed averaged {ref:.2f}%", transform=ax.transAxes, color=G.FG, fontsize=9.5, va="top")
+        ax.set_title(f"{pd.Timestamp(day):%d %b %Y}: {lab}", loc="left", fontsize=13, pad=46)
+        ax.text(0.0, 1.02, f"a typical crossing day\nrange from 10:00 to the close: {rest.loc[day, 'range_pct']:.2f}%\ndays that never crossed averaged {ref:.2f}%", transform=ax.transAxes, color=G.DIM, fontsize=9.5, va="bottom")
         ax.set_xticks(range(10, 17)); ax.set_xticklabels([f"{h:02d}" for h in range(10, 17)], fontsize=9); ax.set_ylabel("move from last night's close, %")
-        ax.legend(loc="lower right", fontsize=8.5)
+        ax.legend(loc="best", fontsize=8.5)
     if path: fig.savefig(path, bbox_inches="tight", pad_inches=0.25)
     return fig
 
 
 def fig_open5(ctx, res, path=None):
-    """The iceberg: what the daily report shows against what is alive at 10:00; and the last half hour in percent."""
+    """Same-day-expiry gamma against the rest of the book at 10:00, and the last half hour range by same-day gamma at 15:30."""
     import matplotlib.pyplot as plt
     G.style()
     t8 = res["t8"]; bb = {int(x["bucket"]): x for x in t8["by_bucket"]}
@@ -364,9 +363,9 @@ def fig_open5(ctx, res, path=None):
     book, same = bb[0]["book_abs_bn"], bb[0]["ugex_0dte_bn"]
     ax1.bar([0], [book], color=G.DIM, width=0.55, lw=0, label="options expiring later (in the daily report)")
     ax1.bar([1], [book], color=G.DIM, width=0.55, lw=0); ax1.bar([1], [same], bottom=[book], color=G.PURPLE, width=0.55, lw=0, label="options expiring today (not in the report)")
-    ax1.set_xticks([0, 1]); ax1.set_xticklabels(["what the daily\nreport shows", "what is alive\nat 10:00"], fontsize=10)
-    ax1.set_ylabel("gamma exposure, billion $ per 1% move (median day)"); ax1.set_title("What the daily report misses", loc="left", fontsize=14)
-    ax1.text(1, book + same + 0.2, f"{same:.1f} bn", ha="center", color=G.PURPLE, fontsize=11); ax1.text(0, book + 0.2, f"{book:.1f} bn", ha="center", color=G.FG, fontsize=11)
+    ax1.set_xticks([0, 1]); ax1.set_xticklabels(["options expiring\nlater (daily report)", "all options alive\nat 10:00"], fontsize=10)
+    ax1.set_ylabel("gamma exposure, billion $ per 1% move (median day)"); ax1.set_title("Gamma expiring today\nagainst the rest of the book", loc="left", fontsize=12)
+    ax1.text(1, book + same + 0.2, f"{same:.1f} billion", ha="center", color=G.PURPLE, fontsize=11); ax1.text(0, book + 0.2, f"{book:.1f} billion", ha="center", color=G.FG, fontsize=11)
     ax1.set_ylim(0, (book + same) * 1.3); ax1.legend(loc="upper left", fontsize=8.5)
     last = layer[layer["bucket"] == 11].dropna(subset=["ugex_0dte"]).set_index("date")
     ob = ctx["ob"]; r12 = ob[ob["bucket"] == 12].set_index("date")["range_b"] * 100.0
@@ -376,7 +375,7 @@ def fig_open5(ctx, res, path=None):
     ax2.bar(range(3), v.values, color=[G.ORANGE, G.DIM2, G.PURPLE], width=0.6, lw=0)
     for i, x in enumerate(v.values): ax2.text(i, x + 0.005, f"{x:.2f}%", ha="center", color=G.FG, fontsize=12)
     ax2.set_xticks(range(3)); ax2.set_xticklabels(v.index, fontsize=9.5); ax2.set_ylabel(f"{ctx['sym']} range 15:30 to 16:00, %"); ax2.set_ylim(0, v.max() * 1.3)
-    ax2.set_title("The last half hour", loc="left", fontsize=14)
+    ax2.set_title("Range 15:30 to 16:00\nby same-day gamma at 15:30", loc="left", fontsize=12)
     if path: fig.savefig(path, bbox_inches="tight", pad_inches=0.25)
     return fig
 
@@ -395,32 +394,33 @@ def fig_open6(ctx, res, path=None):
     for sign, c in ((1, G.CYAN), (-1, G.ORANGE)):
         r = runs[runs["sign"] == sign].sort_values("length").iloc[-1]
         mid = r["start"] + (r["end"] - r["start"]) / 2
-        ax1.annotate(f"{int(r['length'])} straight {'calm' if sign > 0 else 'wild'} days\n{r['start']:%d %b %Y} to {r['end']:%d %b %Y}", xy=(mid, d.loc[r["start"]:r["end"], "close"].min()),
-                     xytext=(0, -55), textcoords="offset points", ha="center", color=c, fontsize=9.5, arrowprops={"arrowstyle": "-", "color": c, "lw": 1})
-    ax1.set_title(f"{ctx['sym']}: the market stays in one mode for weeks (cyan calm, orange wild)", loc="left", fontsize=14)
-    ax1.text(0.01, 0.95, f"tomorrow has the same colour as today {res['p_same_sign_next_day']:.0%} of the time", transform=ax1.transAxes, va="top", color=G.DIM, fontsize=10)
+        seg = d.loc[r["start"]:r["end"], "close"]
+        kw = {"xy": (mid, seg.max()), "xytext": (0, 40), "ha": "center", "va": "bottom"} if sign > 0 else {"xy": (mid, seg.min()), "xytext": (60, -20), "ha": "left", "va": "top"}
+        ax1.annotate(f"{int(r['length'])} straight {'positive' if sign > 0 else 'negative'} days\n{r['start']:%d %b %Y} to {r['end']:%d %b %Y}", textcoords="offset points", color=c, fontsize=9.5, arrowprops={"arrowstyle": "-", "color": c, "lw": 1}, **kw)
+    ax1.set_title(f"{ctx['sym']}: GEX regime by day (cyan positive, orange negative) with the longest streaks", loc="left", fontsize=13)
+    ax1.text(0.01, 0.95, f"the sign is the same on the next day {res['p_same_sign_next_day']:.0%} of the time", transform=ax1.transAxes, va="top", color=G.DIM, fontsize=10)
     if path: fig.savefig(path, bbox_inches="tight", pad_inches=0.25)
     return fig
 
 
 def fig_open7(ctx, res, path=None):
-    """Typical move size at four zoom levels, in percent, by yesterday's regime."""
+    """Typical move size at four horizons, in percent, by yesterday's regime."""
     import matplotlib.pyplot as plt
     G.style()
     inf = G.in_force(ctx["daily"])
     rows = []
     for h in (5, 15, 30, 60):
         b = I.bucketize(ctx["bars"], h); b["in_force"] = inf.reindex(b["date"]).to_numpy()
-        for reg, lab in ((1, "calm"), (-1, "wild")):
+        for reg, lab in ((1, "positive"), (-1, "negative")):
             rows.append({"h": h, "regime": lab, "typical_move_pct": float(b.loc[b["in_force"] == reg, "ret"].abs().median() * 100.0)})
     t = pd.DataFrame(rows).pivot(index="h", columns="regime", values="typical_move_pct")
     fig, ax = plt.subplots(figsize=(G.FIG_W, G.FIG_H)); xs = np.arange(len(t)); w = 0.36
-    ax.bar(xs - w / 2, t["calm"], width=w, color=G.CYAN, lw=0, label="after a calm (positive gamma) close")
-    ax.bar(xs + w / 2, t["wild"], width=w, color=G.ORANGE, lw=0, label="after a wild (negative gamma) close")
+    ax.bar(xs - w / 2, t["positive"], width=w, color=G.CYAN, lw=0, label="after a positive-gamma close")
+    ax.bar(xs + w / 2, t["negative"], width=w, color=G.ORANGE, lw=0, label="after a negative-gamma close")
     for i, h in enumerate(t.index):
-        ax.text(i - w / 2, t.loc[h, "calm"] + 0.003, f"{t.loc[h, 'calm']:.3f}%", ha="center", color=G.FG, fontsize=9); ax.text(i + w / 2, t.loc[h, "wild"] + 0.003, f"{t.loc[h, 'wild']:.3f}%", ha="center", color=G.FG, fontsize=9)
+        ax.text(i - w / 2, t.loc[h, "positive"] + 0.003, f"{t.loc[h, 'positive']:.3f}%", ha="center", color=G.FG, fontsize=9); ax.text(i + w / 2, t.loc[h, "negative"] + 0.003, f"{t.loc[h, 'negative']:.3f}%", ha="center", color=G.FG, fontsize=9)
     ax.set_xticks(xs); ax.set_xticklabels([f"{h}-minute move" for h in t.index]); ax.set_ylabel(f"typical (median) {ctx['sym']} move, %")
-    ax.set_title("The same day at four zoom levels", loc="left", fontsize=14); ax.legend(loc="upper left", fontsize=9.5); ax.set_ylim(0, t.max().max() * 1.3)
+    ax.set_title("Typical move at 5, 15, 30 and 60 minutes by the prior close's regime", loc="left", fontsize=13); ax.legend(loc="upper left", fontsize=9.5); ax.set_ylim(0, t.max().max() * 1.3)
     if path: fig.savefig(path, bbox_inches="tight", pad_inches=0.25)
     return fig
 
@@ -434,7 +434,7 @@ def _candles(ax, st, days, color_up=G.FG, color_dn=G.DIM):
 
 
 def fig_open8(ctx, res, path=None):
-    """The day after: candles for the day after the most positive and the most negative closes, and the averages."""
+    """Candles for the day after the most positive and the most negative closes, and the averages."""
     import matplotlib.pyplot as plt
     G.style()
     d, st = ctx["daily"], ctx["stock"]
@@ -451,7 +451,7 @@ def fig_open8(ctx, res, path=None):
     for i, v in enumerate((a, b)): axes[2].text(i, v + 0.02, f"{v:.2f}%", ha="center", color=G.FG, fontsize=12)
     axes[2].set_xticks([0, 1]); axes[2].set_xticklabels(["day after a\npositive close", "day after a\nnegative close"], fontsize=9.5)
     axes[2].set_ylabel("average next-day range, %"); axes[2].set_title("all days", loc="left", fontsize=11); axes[2].set_ylim(0, max(a, b) * 1.3)
-    fig.suptitle("The day after", x=0.01, y=1.04, ha="left", fontsize=15, fontweight="bold", color=G.FG)
+    fig.suptitle("The day after the most positive and the most negative closes, and the averages", x=0.01, y=1.04, ha="left", fontsize=14, fontweight="bold", color=G.FG)
     if path: fig.savefig(path, bbox_inches="tight", pad_inches=0.25)
     return fig
 
@@ -462,7 +462,7 @@ def mdates_num(t):
 
 
 def fig_open9(ctx, res, path=None):
-    """The week after: typical daily move over the next five days, and the middle half of all five-day paths by regime."""
+    """Typical daily move over the next five days, and the middle half of all five-day paths by regime."""
     import matplotlib.pyplot as plt
     G.style()
     out = res["_out"]; st = ctx["stock"]; close = st["close"]
@@ -471,7 +471,7 @@ def fig_open9(ctx, res, path=None):
     ax1.bar([0, 1], [a, b], color=[G.CYAN, G.ORANGE], width=0.6, lw=0)
     for i, v in enumerate((a, b)): ax1.text(i, v + 0.02, f"{v:.2f}%", ha="center", color=G.FG, fontsize=12)
     ax1.set_xticks([0, 1]); ax1.set_xticklabels(["week after a\npositive close", "week after a\nnegative close"], fontsize=9.5)
-    ax1.set_ylabel("typical daily move over the next 5 days, %"); ax1.set_title("The week after", loc="left", fontsize=14); ax1.set_ylim(0, max(a, b) * 1.3)
+    ax1.set_ylabel("typical daily move over the next 5 days, %"); ax1.set_title("Daily move over the next five days", loc="left", fontsize=12); ax1.set_ylim(0, max(a, b) * 1.3)
     pos = st.index.get_indexer(out.index)
     for reg, c, lab in ((1, G.CYAN, "after a positive close"), (-1, G.ORANGE, "after a negative close")):
         rows_ = []
@@ -481,13 +481,13 @@ def fig_open9(ctx, res, path=None):
         m = np.array(rows_); lo, hi = np.percentile(m, 25, axis=0), np.percentile(m, 75, axis=0)
         ax2.fill_between(range(6), lo, hi, color=c, alpha=0.35, lw=0, label=f"{lab}: middle half of {len(m)} weeks, {hi[5] - lo[5]:.1f} points wide on day 5")
     ax2.axhline(0, color=G.DIM2, lw=0.8); ax2.set_xticks(range(6)); ax2.set_xticklabels(["close", "+1", "+2", "+3", "+4", "+5"]); ax2.set_xlabel("trading days after the close")
-    ax2.set_ylabel("move from that close, %"); ax2.set_title("how wide the week can get", loc="left", fontsize=14); ax2.legend(loc="upper left", fontsize=8.5)
+    ax2.set_ylabel("move from that close, %"); ax2.set_title("Middle half of five-day paths by regime", loc="left", fontsize=12); ax2.legend(loc="upper left", fontsize=8.5)
     if path: fig.savefig(path, bbox_inches="tight", pad_inches=0.25)
     return fig
 
 
 def fig_open10(ctx, res, path=None):
-    """Where the biggest moves sit: every daily return, the 20 largest marked by the colour of the prior close."""
+    """Every daily return, the 20 largest marked by the colour of the prior close."""
     import matplotlib.pyplot as plt
     G.style()
     out = res["_out"]; st = ctx["stock"]
@@ -500,7 +500,7 @@ def fig_open10(ctx, res, path=None):
         sel = o.loc[big][o.loc[big, "regime"] == reg]
         ax.scatter(sel["next_day"], sel["ret_next"] * 100, s=70, color=c, lw=0, label=f"{len(sel)} of the 20 largest moves came {lab}", zorder=5)
     ax.axhline(0, color=G.FG, lw=0.6); ax.set_ylabel(f"{ctx['sym']} daily return, %")
-    ax.set_title("Where the biggest moves live", loc="left", fontsize=14); ax.legend(loc="lower left", fontsize=9.5)
+    ax.set_title("The 20 largest next-day moves by the prior close's regime", loc="left", fontsize=13); ax.legend(loc="lower left", fontsize=9.5)
     ax.text(0.99, 0.96, f"negative-gamma closes are {res['base_share_negative']:.0%} of all days", transform=ax.transAxes, ha="right", va="top", color=G.DIM, fontsize=10)
     if path: fig.savefig(path, bbox_inches="tight", pad_inches=0.25)
     return fig

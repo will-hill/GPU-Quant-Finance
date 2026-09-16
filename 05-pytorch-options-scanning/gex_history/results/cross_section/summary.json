@@ -1194,7 +1194,7 @@
     "n_buckets": 115644,
     "n_days": 9637,
     "spearman_stale": -0.09296294021530166,
-    "spearman_live": -0.11501713059586646,
+    "spearman_live": -0.11501712193924497,
     "share_days_with_flip": 0.1364532530870603,
     "flip_vs_same": {
       "prev_negative_flipped_positive": {

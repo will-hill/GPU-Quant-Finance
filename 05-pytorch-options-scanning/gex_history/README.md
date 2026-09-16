@@ -9,14 +9,14 @@ sign of GEX at the close leads the next session. The notebook is `../gex_history
 
 ```
 ../gex_history_spy.ipynb        the notebook (executed, outputs committed)
-probe.py                        step 1 probe of the Theta endpoints: schemas, OI date rule, depth, timing
+probe.py                        step 1 probe of the Theta endpoints: schemas, open interest date rule, depth, timing
 download.py                     pull + cache, resumable, standalone (the only network step)
 gexlib.py                       chain prep, engine call, GEX aggregation, flip level, regimes, tests, figures
 build_notebook.py               writes the notebook from short cells; run, execute, run again, execute again
 intraday.py                     the live book (the previous close's book evaluated at the current spot, from daily spot-grid profiles) and the intraday tests T1..T7
 build_intraday_notebook.py      writes ../gex_intraday_spy.ipynb (same two-pass scheme)
 live_gpu.py                   device-resident live value kernel around the engine's device function; timing table
-download_universe.py            multi-symbol pull (quotes, OI, spot, 1-minute bars) for the cross-section
+download_universe.py            multi-symbol pull (quotes, open interest, spot, 1-minute bars) for the cross-section
 cross_section.py                per-name daily GEX + profiles, pooled tests, cross-sectional sort, pooled intraday tests
 build_cross_section_notebook.py writes ../gex_cross_section.ipynb
 per_symbol_tests.py            every indication as one statistic per symbol -> results/cross_section/per_symbol_tests.json
@@ -38,10 +38,10 @@ results/
 Notebooks at the module top level: `gex_history_spy.ipynb` (daily regime tests, 3 years), `gex_intraday_spy.ipynb`
 (what the live book adds intraday), `gex_cross_section.ipynb` (the most active names, 1 year).
 
-`../gex_rows/row01..row10_*.ipynb`: one notebook per demonstrated indication (title line plus code), built by
+`../gex_rows/row01..row10_*.ipynb`: one notebook per demonstrated indication (the row's table, a short paragraph above the opener figure, and code), built by
 `build_row_notebooks.py` on `rows.py`; each computes SPY live and shows the per-name table from
 `results/cross_section/per_symbol_tests.json` (`per_symbol_tests.py`, SPY QQQ IWM NVDA TSLA AAPL AMZN META MSFT AMD).
-Rows: 1 live value tracks the next print; 2 level at 10:00 sets the rest of day; 3 live value beats the stale print for the
+Rows: 1 live value tracks the next print; 2 level at 10:00 and the rest-of-day range; 3 live value beats the stale print for the
 next 30 minutes; 4 flip crossings; 5 the 0DTE layer; 6 persistence; 7 intraday realized vol by daily regime;
 8 next-day range; 9 next-week vol; 10 tail days.
 
@@ -76,18 +76,18 @@ History depth was probed at 1, 2 and 3 years back (`probe.py`); all three endpoi
 before the first episode exist), `interest_rate_history_eod("SOFR")`, and with `--intraday`
 `stock_history_ohlc(interval="1m")` per calendar month.
 
-**Open interest rule.** An OI row dated D carries a 06:30 ET timestamp on D and is the open interest
+**Open interest rule.** An open interest row dated D carries a 06:30 ET timestamp on D and is the open interest
 as of the close of D-1. Established in `probe.py` on the 2026-09-11 expiration: the correlation of
 |dOI on D| with volume on D-1 is 0.667 against 0.162 with volume on D, and |dOI| exceeds volume on
 1.1% of contract-days under the D-1 pairing against 15.9% under the same-day pairing. The GEX at the
-close of D uses the OI record dated D, the last one available during D. Positions opened during D,
+close of D uses the open interest record dated D, the last one available during D. Positions opened during D,
 including all 0DTE flow, are not in it. No record published after the close of D is used.
 
-**Chain rules per day.** Universe = the OI record of D, left-joined to the quotes of D on
+**Chain rules per day.** Universe = the open interest record of D, left-joined to the quotes of D on
 (expiration, strike, right). S = SPY close on D. T = (expiration - D) / 365.25.
 Kept: 1 <= days to expiry <= 120, 0.80 S <= K <= 1.20 S, open interest > 0, bid > 0, ask >= bid,
 mid > intrinsic + 1e-6. Contracts expiring on D are gone at the close. Strikes outside the band
-hold 29.5% of OI but 0.84% of |GEX| on the day checked without the cut (2026-07-08). The scanner's
+hold 29.5% of open interest but 0.84% of absolute GEX on the day checked without the cut (2026-07-08). The scanner's
 `dte >= 7`, `mid >= 0.05` and `0.4 <= S/K <= 2.5` filters are not applied.
 
 **Rate and yield.** r = SOFR on D from Theta Data, in decimal, used as a continuously compounded
@@ -131,13 +131,13 @@ range normalized by the time-of-day median. Numbers in `results/intraday_spy.jso
 | test | result |
 |---|---|
 | T6 live value against the next official print | sign agreement 92.9% for the live book at today's close against 79.5% for yesterday's print; level correlation 0.96 against 0.77; 77% of the 154 sign changes caught by the close |
-| T1 realized vol by regime | negative over positive 1.58x (5-minute returns) to 1.64x (30-minute), p < 0.001 at every horizon |
+| T1 realized vol by regime | negative over positive 1.58 times (5-minute returns) to 1.64 times (30-minute), p-value below 0.001 at every horizon |
 | T2 live value against stale, next 30-minute range | Spearman -0.52 against -0.43; joint rank regression t = -10.6 for the live value, -1.5 for the stale value; within-day increment Spearman -0.03 (the live value updates the day's level, it does not time buckets) |
 | T3 intraday flips | live sign leaves the prior close's sign on 29% of days; after a negative-to-positive crossing the rest of the day runs 0.60 to 0.64 multiples below no-crossing days of the same regime (matched on move size), after positive-to-negative 0.31 above |
-| T3b near-flip control | days that started within 0.5% of the flip: crossed up 0.97 against stayed 1.24 (CI [-0.40, -0.13]); crossed down 1.12 against 0.81 (CI [+0.21, +0.40]) |
-| T4 wall touches | 30 minutes after the first touch: call wall -1.2 bp (CI [-3.9, +1.5], n 122), put wall -2.7 bp (CI [-8.6, +3.2], n 86); placebo levels 5 dollars away look the same. Not support or resistance |
+| T3b near-flip control | days that started within 0.5% of the flip: crossed up 0.97 against stayed 1.24 (95% confidence interval of the difference [-0.40, -0.13]); crossed down 1.12 against 0.81 (confidence interval [+0.21, +0.40]) |
+| T4 wall touches | 30 minutes after the first touch: call wall -1.2 basis points (confidence interval [-3.9, +1.5], n 122), put wall -2.7 basis points (confidence interval [-8.6, +3.2], n 86); placebo levels 5 dollars away look the same. Not support or resistance |
 | T5 time of day | negative over positive range ratio between 1.38 and 1.74 in every half hour; widest bucket is the open |
-| T7 model choice | European instead of American changes the daily sign on 15 of 751 days, median 0.26 $bn; American gamma is 1.067x European for in-the-money puts, equal for calls |
+| T7 model choice | European instead of American changes the daily sign on 15 of 751 days, median 0.26 billion dollars; American gamma is 1.067 times the European value for in-the-money puts, equal for calls |
 
 ## GPU: the live value as one kernel (`live_gpu.py`, `results/live_timing.json`)
 
@@ -157,7 +157,7 @@ European exercise), their daily bars and 1-minute bars. `cross_section.run_symbo
 per name (flat dividend yield per name from `gexlib.Q_BY_SYMBOL`, 0 when not listed). Structure of the
 books, GEX in dollars per 1% move, from `results/cross_section/{sym}_daily.csv`:
 
-| symbol | days | negative-GEX days | median net GEX, $bn per 1% | median abs GEX | contracts per day |
+| symbol | days | negative-GEX days | median net GEX, billion dollars per 1% | median absolute GEX | contracts per day |
 |---|---|---|---|---|---|
 | SPX | 251.0 | 38% | +14.55 | 32.18 | 10711.0 |
 | SPY | 251.0 | 63% | -2.69 | 4.59 | 3595.0 |
@@ -205,7 +205,7 @@ books, GEX in dollars per 1% move, from `results/cross_section/{sym}_daily.csv`:
 Index and ETF books are put-dominated; the mega-caps are call-dominated and almost never negative, so
 the within-name tests use each name's own GEX terciles rather than the sign. Test results and the
 pooled intraday live-book tests are in `results/cross_section/summary.json` and the notebook's
-conclusions cell. Results. Within a name, low GEX goes with a wider next day in 27 of 39 names (median ratio 1.06; SPX 1.50, QQQ 1.39, DRAM 1.37); pooled bottom third 1.046 against top third 0.978, CI [+0.044, +0.090]. That is a market-wide time effect, not a way to pick names: on the same day, names in their own bottom tercile against names in their own top tercile differ by -0.002 (CI [-0.036, +0.032], 207 days), the share of names in their low state on D correlates +0.20 with the market's average relative range on D+1, and ranking names across the cross-section does not order tomorrow's relative range under any key (most negative to most positive bin: GEX per dollar traded 1.019, 0.995, 0.986, 1.019, 1.023; own z-score 0.992, 1.005, 1.010, 0.998, 1.012; raw GEX 1.025, 0.996, 1.008, 1.013, 1.000). Intraday, over 41 names and 115,644 half-hour buckets: mean sign agreement with the next official print 92.2% for the live book against 85.3% stale, better in every name; the live sign leaves the prior close's sign on 14% of name-days. Pooled flips move the next bucket in the predicted direction (negative to positive 1.11 against 1.26, positive to negative 1.23 against 1.10), but at the same date and bucket flipped names are not wider than names that held (-0.009, CI [-0.038, +0.018]; -0.039, CI [-0.056, -0.021]). A multi-name scanner is therefore shown to keep each name's regime current between prints; it is not shown to tell which name will be wider or quieter than its peers.
+conclusions cell. Results. Within a name, low GEX goes with a wider next day in 27 of 39 names (median ratio 1.06; SPX 1.50, QQQ 1.39, DRAM 1.37); pooled bottom third 1.046 against top third 0.978, confidence interval [+0.044, +0.090]. That is a market-wide time effect, not a way to pick names: on the same day, names in their own bottom tercile against names in their own top tercile differ by -0.002 (confidence interval [-0.036, +0.032], 207 days), the share of names in their low state on D correlates +0.20 with the market's average relative range on D+1, and ranking names across the cross-section does not order tomorrow's relative range under any key (most negative to most positive bin: GEX per dollar traded 1.019, 0.995, 0.986, 1.019, 1.023; own z-score 0.992, 1.005, 1.010, 0.998, 1.012; raw GEX 1.025, 0.996, 1.008, 1.013, 1.000). Intraday, over 41 names and 115,644 half-hour buckets: mean sign agreement with the next official print 92.2% for the live book against 85.3% stale, better in every name; the live sign leaves the prior close's sign on 14% of name-days. Pooled flips move the next bucket in the predicted direction (negative to positive 1.11 against 1.26, positive to negative 1.23 against 1.10), but at the same date and bucket flipped names are not wider than names that held (-0.009, confidence interval [-0.038, +0.018]; -0.039, confidence interval [-0.056, -0.021]). A multi-name scanner is therefore shown to keep each name's regime current between prints; it is not shown to tell which name will be wider or quieter than its peers.
 
 ## Provenance of the numbers in the conclusions
 
@@ -216,23 +216,23 @@ of `gex_history_spy.ipynb` on this machine; nothing is typed in by hand.
 | number | value | cell | file |
 |---|---|---|---|
 | trading days, share with negative net GEX | 751, 57.9% (435 negative, 316 positive) | `flips = G.flip_levels(...)` / `daily = G.daily_gex(...)` | `results/spy_gex_daily.csv` |
-| contracts solved, iv_status 1 (excluded), OI share excluded | 2,392,386; 39,881; 0.47% overall, 0.014% median day, 11.07% worst day (2024-06-18) | `sol, timings = G.solve_chain(chain, target="cpu", dtype="fp64")` | printed in the notebook |
-| repricing residual, status 0 | median 6.1e-12, p99 3.7e-8, max 4.6e-4 | same cell | printed |
+| contracts solved, iv_status 1 (excluded), open interest share excluded | 2,392,386; 39,881; 0.47% overall, 0.014% median day, 11.07% worst day (2024-06-18) | `sol, timings = G.solve_chain(chain, target="cpu", dtype="fp64")` | printed in the notebook |
+| repricing residual, status 0 | median 6.1e-12, 99th percentile 3.7e-8, largest 4.6e-4 | same cell | printed |
 | engine wall time, CPU fp64, 48 threads | IV pass 10.5 s, Greeks pass 1.3 s | same cell | printed |
 | engine wall time, RTX PRO 6000 Blackwell fp32 | IV pass 0.21 s, Greeks pass 0.05 s; daily net GEX differs from CPU fp64 by at most 2.8e-3 relative | `from numba import cuda` cell | printed |
 | flip level found | 747 of 751 days; median 0.19% above spot | flip cell | `spy_gex_daily.csv` |
-| next-day range, + against - | 0.75% against 1.22%, diff -0.47%, CI [-0.57%, -0.39%], p < 0.001 | `out = G.next_day_outcomes(daily, stock)` | `results/regime_stats.json` tests_sign_cut[range] |
-| next-day absolute return | 0.46% against 0.80%, diff -0.34%, CI [-0.43%, -0.25%], p < 0.001 | same | tests_sign_cut[move] |
-| 5-day forward vol, annualized | 9.8% against 14.7%, diff -4.9%, CI [-6.1%, -3.8%], p < 0.001 | same | tests_sign_cut[forward vol] |
-| next-day continuation rate | 54.7% against 49.5%, diff +5.2 points, CI [-2.1, +12.4], p = 0.159 | same | tests_sign_cut[continuation] |
-| lag-1 autocorrelation of daily returns | +0.064 against -0.088, CI of the difference [-0.10, +0.37], p = 0.051 | same | tests_sign_cut[autocorrelation] |
-| gap-fade rate | 54.1% against 49.8%, diff +4.3 points, CI [-2.7, +11.8], p = 0.240 | same | tests_sign_cut[gap fade] |
-| corr(GEX on D, range on D+k) | k = +1: -0.39 (Spearman -0.52); k = -1: -0.31 (Spearman -0.37); k = 0: -0.40; mean k = 1..5 -0.32, mean k = -5..-1 -0.24 | `xc = G.cross_correlation(daily, stock)` | cross_correlation_gex_vs_range |
+| next-day range, + against - | 0.75% against 1.22%, difference -0.47%, confidence interval [-0.57%, -0.39%], p-value below 0.001 | `out = G.next_day_outcomes(daily, stock)` | `results/regime_stats.json` tests_sign_cut[range] |
+| next-day absolute return | 0.46% against 0.80%, difference -0.34%, confidence interval [-0.43%, -0.25%], p-value below 0.001 | same | tests_sign_cut[move] |
+| 5-day forward vol, annualized | 9.8% against 14.7%, difference -4.9%, confidence interval [-6.1%, -3.8%], p-value below 0.001 | same | tests_sign_cut[forward vol] |
+| next-day continuation rate | 54.7% against 49.5%, difference +5.2 points, confidence interval [-2.1, +12.4], p-value 0.159 | same | tests_sign_cut[continuation] |
+| lag-1 autocorrelation of daily returns | +0.064 against -0.088, confidence interval of the difference [-0.10, +0.37], p-value 0.051 | same | tests_sign_cut[autocorrelation] |
+| gap-fade rate | 54.1% against 49.8%, difference +4.3 points, confidence interval [-2.7, +11.8], p-value 0.240 | same | tests_sign_cut[gap fade] |
+| correlation of GEX on D with the range on D+k | k = +1: -0.39 (Spearman -0.52); k = -1: -0.31 (Spearman -0.37); k = 0: -0.40; mean over k = 1 to 5 -0.32, mean over k = -5 to -1 -0.24 | `xc = G.cross_correlation(daily, stock)` | cross_correlation_gex_vs_range |
 | pinning: distance to the positive wall, share of days moving toward it | 0.79% against 2.89%; 44.6% against 54.6% of days | `pin = G.pinning_test(daily)` | pinning |
-| intraday 30-minute lag-1 autocorrelation | -0.093 (CI [-0.125, -0.060], n = 310) against -0.066 (CI [-0.094, -0.037], n = 433), p = 0.275 | `per_day, itab, ip = G.intraday_autocorr(daily)` | intraday_ac1_by_regime |
+| intraday 30-minute lag-1 autocorrelation | -0.093 (confidence interval [-0.125, -0.060], n = 310) against -0.066 (confidence interval [-0.094, -0.037], n = 433), p-value 0.275 | `per_day, itab, ip = G.intraday_autocorr(daily)` | intraday_ac1_by_regime |
 | episodes | 4 negative runs (2026-07-16, 08-18, 08-28, 09-04), 4 positive runs (2024-06-05, 2024-11-19, 2025-11-25, 2026-08-03) | `eps, info = G.select_episodes(daily, stock)` | `results/episodes.json` |
-| vendor against engine net GEX | corr 0.9992, sign agreement 94.5%, abs difference median $0.72bn, p99 $1.51bn; within 7 days to expiry corr 0.9998, sign agreement 98.3%, abs difference median $0.08bn; vendor put GEX is 0.957 of the engine's on the median day, calls 1.006 | `vd, vstats, vtab = G.vendor_compare(sol)` | `results/vendor_vs_engine.json` |
-| strike band check | 94.97% of abs GEX inside 0.90 to 1.10 S, 0.84% outside 0.80 to 1.20 S, on 2026-07-08 | `day = [d for d in days if d.weekday() == 2][-10]` cell | printed |
+| vendor against engine net GEX | correlation 0.9992, sign agreement 94.5%, absolute difference median 0.72 billion dollars, 99th percentile 1.51 billion; within 7 days to expiry correlation 0.9998, sign agreement 98.3%, absolute difference median 0.08 billion; vendor put GEX is 0.957 of the engine's on the median day, calls 1.006 | `vd, vstats, vtab = G.vendor_compare(sol)` | `results/vendor_vs_engine.json` |
+| strike band check | 94.97% of absolute GEX inside 0.90 to 1.10 S, 0.84% outside 0.80 to 1.20 S, on 2026-07-08 | `day = [d for d in days if d.weekday() == 2][-10]` cell | printed |
 
 Intraday numbers come from the cells of `gex_intraday_spy.ipynb` named by their first line (`t6 = I.t6_live_tracks_next_print(...)`,
 `t1 = I.t1_intraday_vol(...)`, `t2 = I.t2_live_versus_stale(ob)`, `t3, flipdays = I.t3_intraday_flips(ob)`, `t4 = I.t4_wall_touches(...)`,
@@ -242,5 +242,5 @@ cells of `gex_cross_section.ipynb` (`runs = [X.run_symbol(...)]`, `bytercile = X
 `xs = X.cross_sectional_sort(...)`, `pooled_intra = X.pooled_intraday(intra)`, `same = X.same_day_tests(panel, ob_all)`) and are stored in
 `results/cross_section/summary.json`.
 
-Step 1 numbers (schemas, the OI rule test, history depth, pull timing) come from `uv run python
+Step 1 numbers (schemas, the open interest rule test, history depth, pull timing) come from `uv run python
 gex_history/probe.py`; the pull summary is `results/download_log.json`.

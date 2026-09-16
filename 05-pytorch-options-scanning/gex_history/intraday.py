@@ -296,7 +296,7 @@ def t5_time_of_day(ob: pd.DataFrame) -> pd.DataFrame:
 
 def t3b_near_flip(ob: pd.DataFrame, days: pd.DataFrame, near_pct: float = 0.5) -> dict:
     """Control for the starting distance: among days whose previous close was within `near_pct` % of the
-    flip level (the stale print already says 'near the boundary'), compare the rest-of-day adjusted range
+    flip level (the stale print alone already places spot near the boundary), compare the rest-of-day adjusted range
     on days that crossed intraday against days that did not, over the same buckets after the median
     flip bucket of the crossers. Also a joint rank regression of the next bucket's range on the stale
     and live GEX."""
@@ -386,13 +386,13 @@ def fig_live_versus_stale(daily: pd.DataFrame, profiles: pd.DataFrame, t6: dict,
     d = d.dropna(subset=["gex_live", "gex_prev"])
     fig, axes = plt.subplots(1, 2, figsize=(9.6, 4.6), gridspec_kw={"wspace": 0.3})
     lim = [d["gex_net_usd"].min() / 1e9 * 1.05, d["gex_net_usd"].max() / 1e9 * 1.05]
-    for ax, col, c, title, agree, corr in ((axes[0], "gex_prev", G.DIM, "Stale: yesterday's print", t6["sign_agreement_stale"], t6["corr_level_stale"]),
-                                            (axes[1], "gex_live", G.CYAN, "Live at today's close", t6["sign_agreement_live"], t6["corr_level_live"])):
+    for ax, col, c, title, agree, corr in ((axes[0], "gex_prev", G.DIM, "Yesterday's print (stale)", t6["sign_agreement_stale"], t6["corr_level_stale"]),
+                                            (axes[1], "gex_live", G.CYAN, "Live value at today's close", t6["sign_agreement_live"], t6["corr_level_live"])):
         ax.plot(lim, lim, color=G.DIM2, lw=1.0, ls="--")
         ax.axhline(0, color=G.DIM2, lw=0.6); ax.axvline(0, color=G.DIM2, lw=0.6)
         ax.scatter(d[col] / 1e9, d["gex_net_usd"] / 1e9, s=10, color=c, alpha=0.65, lw=0)
-        ax.set_xlabel(f"{'stale' if col == 'gex_prev' else 'live'} GEX, $bn per 1%")
-        ax.set_ylabel("official GEX at today's close, $bn per 1%")
+        ax.set_xlabel(f"{'stale' if col == 'gex_prev' else 'live'} GEX, billion $ per 1%")
+        ax.set_ylabel("official GEX at today's close, billion $ per 1%")
         ax.set_title(title, loc="left", fontsize=14, pad=20)
         ax.text(0.0, 1.01, f"sign agreement {agree:.1%}   level correlation {corr:.2f}", transform=ax.transAxes, color=G.FG, fontsize=10.5, va="bottom")
         ax.set_xlim(lim); ax.set_ylim(lim)
@@ -408,6 +408,7 @@ def fig_intraday_flip(ob: pd.DataFrame, days: pd.DataFrame, t3b: dict, path=None
     G.style()
     d = ob.dropna(subset=["gex_live"])
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(9.6, 4.6), gridspec_kw={"wspace": 0.36, "width_ratios": [1.3, 1.0]})
+    ymax = 0.0
     for reg, lab, c in ((-1, "negative at prior close, flipped positive", G.CYAN), (1, "positive at prior close, flipped negative", G.ORANGE)):
         fd = days[(days["regime_prev"] == reg) & days["flip_bucket"].notna()]
         nf = days[(days["regime_prev"] == reg) & days["flip_bucket"].isna()]
@@ -419,17 +420,18 @@ def fig_intraday_flip(ob: pd.DataFrame, days: pd.DataFrame, t3b: dict, path=None
         ev = pd.concat(rel, axis=1).mean(axis=1)
         ev = ev[(ev.index >= -3) & (ev.index <= 6)]
         ref = d[d["date"].isin(nf.index)]["range_adj"].mean()
+        ymax = max(ymax, float(ev.max()), float(ref))
         ax1.plot(ev.index, ev.values, marker="o", color=c, lw=2.0, label=f"{lab} (n = {len(fd)})")
         ax1.axhline(ref, color=c, lw=1.0, ls=":", alpha=0.9)
     ax1.axvline(0, color=G.PURPLE, lw=1.2, ls="--")
     ax1.text(0.0, 1.01, "dashed: crossing bucket\ndotted: mean of same-regime days that never crossed", transform=ax1.transAxes, va="bottom", color=G.DIM, fontsize=8.5)
     ax1.set_xlabel("30-minute buckets relative to the crossing")
     ax1.set_ylabel("range, multiple of the time-of-day median")
-    ax1.set_title("Range before and after an intraday flip", loc="left", fontsize=14, pad=30)
-    ax1.legend(loc="upper right", fontsize=8.5)
+    ax1.set_title("Range before and after an intraday flip", loc="left", fontsize=13, pad=30)
+    ax1.set_ylim(top=ymax * 1.16); ax1.legend(loc="upper right", fontsize=8.5)
     r = t3b["near_flip_cross_vs_stay"]
     labels, vals, los, his, cols = [], [], [], [], []
-    for key, lab, c in (("neg_to_pos", "neg start", G.CYAN), ("pos_to_neg", "pos start", G.ORANGE)):
+    for key, lab, c in (("neg_to_pos", "negative\nstart", G.CYAN), ("pos_to_neg", "positive\nstart", G.ORANGE)):
         x = r[key]
         labels += [f"{lab}\ncrossed\nn = {x['n_cross']}", f"{lab}\nstayed\nn = {x['n_stay']}"]
         vals += [x["post_range_adj_cross"], x["post_range_adj_stay"]]
@@ -438,12 +440,12 @@ def fig_intraday_flip(ob: pd.DataFrame, days: pd.DataFrame, t3b: dict, path=None
     ax2.bar(xs, vals, color=cols, width=0.7, lw=0)
     ax2.set_xticks(xs); ax2.set_xticklabels(labels, fontsize=9)
     ax2.set_ylabel("rest-of-day range, multiple of median")
-    ax2.set_title(f"Started within {t3b['near_pct']}% of the flip", loc="left", fontsize=14, pad=30)
+    ax2.set_title(f"Days that started within\n{t3b['near_pct']}% of the flip", loc="left", fontsize=13, pad=30)
     ax2.text(0.0, 1.01, "crossed: live sign flipped intraday\nstayed: it did not", transform=ax2.transAxes, va="bottom", color=G.DIM, fontsize=8.5)
     for key, i in (("neg_to_pos", 0.5), ("pos_to_neg", 2.5)):
         x = r[key]
-        ax2.text(i, max(vals) * 1.04, f"difference {x['diff']:+.2f}\nCI [{x['ci_lo']:+.2f}, {x['ci_hi']:+.2f}]", ha="center", va="bottom", color=G.FG, fontsize=9)
-    ax2.set_ylim(0, max(vals) * 1.3)
+        ax2.text(i, max(vals) * 1.04, f"difference {x['diff']:+.2f}\n95% interval\n[{x['ci_lo']:+.2f}, {x['ci_hi']:+.2f}]", ha="center", va="bottom", color=G.FG, fontsize=8.5)
+    ax2.set_ylim(0, max(vals) * 1.42)
     if path:
         fig.savefig(path, bbox_inches="tight", pad_inches=0.25)
     return fig
@@ -457,10 +459,10 @@ def fig_intraday_vol(t1: pd.DataFrame, path=None):
     ax.bar(xs - w / 2, t1["rv_pos"] * 100, width=w, color=G.CYAN, lw=0, label=f"positive GEX in force, n = {int(t1['n_pos'].iloc[0])} days")
     ax.bar(xs + w / 2, t1["rv_neg"] * 100, width=w, color=G.ORANGE, lw=0, label=f"negative GEX in force, n = {int(t1['n_neg'].iloc[0])} days")
     for i, (h, r) in enumerate(zip(t1.index, t1["ratio_neg_over_pos"])):
-        ax.text(i, max(t1["rv_pos"].iloc[i], t1["rv_neg"].iloc[i]) * 100 + 0.3, f"x{r:.2f}", ha="center", color=G.FG, fontsize=11)
+        ax.text(i, max(t1["rv_pos"].iloc[i], t1["rv_neg"].iloc[i]) * 100 + 0.3, f"{r:.2f} times", ha="center", color=G.FG, fontsize=11)
     ax.set_xticks(xs); ax.set_xticklabels([f"{h}-minute returns" for h in t1.index])
     ax.set_ylabel("mean realized vol from intraday returns, annualized %")
-    ax.set_title("The regime is visible at every intraday horizon", loc="left", pad=22)
+    ax.set_title("Realized vol by regime at four horizons", loc="left", pad=22)
     ax.text(0.0, 1.015, "per-day realized vol from intraday log returns, averaged by the regime at the previous close; label: negative over positive", transform=ax.transAxes, color=G.DIM, fontsize=10, va="bottom")
     ax.set_ylim(0, max(t1["rv_neg"].max(), t1["rv_pos"].max()) * 100 * 1.22)
     ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.1), ncol=2, fontsize=10)
@@ -480,8 +482,8 @@ def fig_time_of_day(t5: pd.DataFrame, path=None):
     ax.set_xticks(xs); ax.set_xticklabels(labels, fontsize=9)
     ax.set_xlabel("30-minute bucket start, ET")
     ax.set_ylabel("mean range in the bucket, % of prior close")
-    ax.set_title("Regime effect by time of day", loc="left", pad=22)
-    ax.text(0.0, 1.015, f"negative over positive ratio: min {t5['ratio_neg_over_pos'].min():.2f}, max {t5['ratio_neg_over_pos'].max():.2f}; widest bucket is the open in both regimes", transform=ax.transAxes, color=G.DIM, fontsize=10, va="bottom")
+    ax.set_title("Mean half-hour range by time of day and regime", loc="left", pad=22)
+    ax.text(0.0, 1.015, f"negative over positive ratio: lowest {t5['ratio_neg_over_pos'].min():.2f}, highest {t5['ratio_neg_over_pos'].max():.2f}; the widest bucket is the open in both regimes", transform=ax.transAxes, color=G.DIM, fontsize=10, va="bottom")
     ax.legend(loc="upper right", fontsize=10)
     if path:
         fig.savefig(path, bbox_inches="tight", pad_inches=0.25)
@@ -505,9 +507,9 @@ def fig_wall_touches(t4: dict, path=None):
             ax.errorbar(i, v, yerr=[[v - ci[0]], [ci[1] - v]], fmt="none", ecolor=G.FG, elinewidth=1.6, capsize=6)
     ax.axhline(0, color=G.DIM2, lw=0.8)
     ax.set_xticks(xs); ax.set_xticklabels([t for t, *_ in items], fontsize=9.5)
-    ax.set_ylabel("mean return in the 30 minutes after the first touch, bp")
-    ax.set_title("Walls as intraday support and resistance: no effect", loc="left", pad=22)
-    ax.text(0.0, 1.015, "whiskers: bootstrap 95% CI; placebo levels are the wall shifted by 5 dollars; a resistance effect would be negative for calls, positive for puts", transform=ax.transAxes, color=G.DIM, fontsize=9.5, va="bottom")
+    ax.set_ylabel("mean return in the 30 minutes after the first touch, basis points")
+    ax.set_title("Return after the first touch of a wall, against placebo levels", loc="left", pad=22)
+    ax.text(0.0, 1.015, "whiskers: bootstrap 95% confidence interval; placebo levels are the wall shifted by 5 dollars; a resistance effect would be negative for calls, positive for puts", transform=ax.transAxes, color=G.DIM, fontsize=9.5, va="bottom")
     if path:
         fig.savefig(path, bbox_inches="tight", pad_inches=0.25)
     return fig
@@ -627,8 +629,8 @@ def t8_controls(layer: pd.DataFrame, sol: pd.DataFrame, daily: pd.DataFrame, sym
            "last_half_hour_controlled_coef": {k: float(v) for k, v in fit.params.items() if k != "const"}, "r2": float(fit.rsquared)}
     # within-day-vol strata: terciles of range so far, then high versus low 0DTE exposure inside each stratum
     strata = {}
-    q_sofar = pd.qcut(last["range_sofar"].rank(method="first"), 3, labels=["calm so far", "middle", "wide so far"])
-    for lab in ("calm so far", "middle", "wide so far"):
+    q_sofar = pd.qcut(last["range_sofar"].rank(method="first"), 3, labels=["narrow so far", "middle", "wide so far"])
+    for lab in ("narrow so far", "middle", "wide so far"):
         m = last[q_sofar == lab]
         q = pd.qcut(m["ugex_0dte"].rank(method="first"), 3, labels=False)
         lo_, hi_ = m.loc[q == 0, "next_range_adj"].to_numpy(), m.loc[q == 2, "next_range_adj"].to_numpy()
@@ -661,24 +663,24 @@ def fig_zero_dte(t8: dict, path=None):
     bb = bb[bb.index < 12]
     labels = [f"{(570 + 30 * int(b) + 30) // 60:02d}:{(570 + 30 * int(b) + 30) % 60:02d}" for b in bb.index]
     ax1.plot(bb.index, bb["ugex_0dte_bn"], marker="o", color=G.PURPLE, lw=2.0, label="same-day expiry, unsigned gamma exposure")
-    ax1.plot(bb.index, bb["book_abs_bn"], marker="o", color=G.DIM, lw=2.0, label="standing book, abs net GEX (live)")
+    ax1.plot(bb.index, bb["book_abs_bn"], marker="o", color=G.DIM, lw=2.0, label="standing book, absolute net GEX (live)")
     ax1.set_xticks(bb.index[::2]); ax1.set_xticklabels(labels[::2], fontsize=9)
-    ax1.set_ylabel("median across days, $bn per 1% move")
+    ax1.set_ylabel("median across days, billion $ per 1% move")
     ax1.set_xlabel("bucket close, ET")
-    ax1.set_title("0DTE layer against the standing book", loc="left", fontsize=14, pad=20)
+    ax1.set_title("Same-day-expiry gamma\nagainst the rest of the book", loc="left", fontsize=13, pad=20)
     ax1.text(0.0, 1.01, f"median share of same-day expiry in total unsigned exposure {bb['share_0dte'].median():.0%}, positions as of the prior close only", transform=ax1.transAxes, va="bottom", color=G.DIM, fontsize=8.5)
     ax1.set_ylim(0, max(bb["ugex_0dte_bn"].max(), bb["book_abs_bn"].max()) * 1.35)
     ax1.legend(loc="upper right", fontsize=8.5)
     r = t8["last_half_hour_by_0dte_exposure_at_1530"]
     keys = [("all", "all days"), ("prev_positive", "prior regime positive"), ("prev_negative", "prior regime negative")]
     xs = np.arange(len(keys)); w = 0.36
-    ax2.bar(xs - w / 2, [r[k]["last_half_hour_range_adj_low_0dte"] for k, _ in keys], width=w, color=G.DIM2, lw=0, label="bottom third of 0DTE exposure at 15:30")
+    ax2.bar(xs - w / 2, [r[k]["last_half_hour_range_adj_low_0dte"] for k, _ in keys], width=w, color=G.DIM2, lw=0, label="bottom third of same-day-expiry exposure at 15:30")
     ax2.bar(xs + w / 2, [r[k]["high_0dte"] for k, _ in keys], width=w, color=G.PURPLE, lw=0, label="top third")
     for i, (k, _) in enumerate(keys):
-        ax2.text(i, max(r[k]["last_half_hour_range_adj_low_0dte"], r[k]["high_0dte"]) + 0.05, f"difference {r[k]['diff_high_minus_low']:+.2f}\nCI [{r[k]['ci_lo']:+.2f}, {r[k]['ci_hi']:+.2f}]", ha="center", va="bottom", color=G.FG, fontsize=8.5)
-    ax2.set_xticks(xs); ax2.set_xticklabels([f"{lab}\nn = {r[k]['n']}" for k, lab in (("all", "all days"), ("prev_positive", "prior +"), ("prev_negative", "prior -"))], fontsize=9)
+        ax2.text(i, max(r[k]["last_half_hour_range_adj_low_0dte"], r[k]["high_0dte"]) + 0.05, f"difference {r[k]['diff_high_minus_low']:+.2f}\n95% interval [{r[k]['ci_lo']:+.2f}, {r[k]['ci_hi']:+.2f}]", ha="center", va="bottom", color=G.FG, fontsize=8.5)
+    ax2.set_xticks(xs); ax2.set_xticklabels([f"{lab}\nn = {r[k]['n']}" for k, lab in (("all", "all days"), ("prev_positive", "prior regime\npositive"), ("prev_negative", "prior regime\nnegative"))], fontsize=9)
     ax2.set_ylabel("15:30 to 16:00 range, multiple of median")
-    ax2.set_title("0DTE gamma and the last half hour", loc="left", fontsize=14, pad=20)
+    ax2.set_title("Range 15:30 to 16:00\nby same-day gamma at 15:30", loc="left", fontsize=13, pad=20)
     ax2.set_ylim(0, max(max(r[k]["last_half_hour_range_adj_low_0dte"], r[k]["high_0dte"]) for k, _ in keys) * 1.6)
     ax2.legend(loc="upper right", fontsize=8.5)
     if path:

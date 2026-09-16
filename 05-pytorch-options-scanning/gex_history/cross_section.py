@@ -71,7 +71,7 @@ def run_symbol(symbol: str, roots=None, target: str = "cpu", dtype: str = "fp64"
            "median_oi_total": float(daily["oi_total"].median()), "wall_s": round(time.perf_counter() - t0, 1)}
     if verbose:
         print(f"{symbol.upper():6s} {out['days']} days, {out['contracts']:,} contracts, IV {tm['t_iv_s']:.1f}s, "
-              f"negative {out['share_negative_days']:.0%}, median |GEX| {out['median_abs_gex_bn']:.2f} $bn, {out['wall_s']}s", flush=True)
+              f"negative {out['share_negative_days']:.0%}, median |GEX| {out['median_abs_gex_bn']:.2f} billion $, {out['wall_s']}s", flush=True)
     return out
 
 
@@ -201,9 +201,9 @@ def fig_ratio_by_name(tbl: pd.DataFrame, path=None):
     cols = [G.ORANGE if r > 1 else G.CYAN for r in t["ratio_neg_over_pos"]]
     ax.barh(ys, t["ratio_neg_over_pos"], color=cols, height=0.7, lw=0)
     ax.axvline(1.0, color=G.FG, lw=1.0, ls="--")
-    ax.set_yticks(ys); ax.set_yticklabels([f"{s}  (n {int(r.n_pos)}/{int(r.n_neg)}, p {r.p_mwu_range:.2f})" for s, r in t.iterrows()], fontsize=9)
+    ax.set_yticks(ys); ax.set_yticklabels([f"{s}  (n {int(r.n_pos)} positive, {int(r.n_neg)} negative, p-value {r.p_mwu_range:.2f})" for s, r in t.iterrows()], fontsize=9)
     ax.set_xlabel("mean next-day range after negative GEX / after positive GEX")
-    ax.set_title("Does the SPY result hold name by name?", loc="left", pad=22)
+    ax.set_title("Next-day range after negative over after positive GEX, by name", loc="left", pad=22)
     ax.text(0.0, 1.01, f"{int((t['ratio_neg_over_pos'] > 1).sum())} of {len(t)} names above 1; median ratio {t['ratio_neg_over_pos'].median():.2f}; n = positive/negative days, p from Mann-Whitney", transform=ax.transAxes, color=G.DIM, fontsize=10, va="bottom")
     if path:
         fig.savefig(path, bbox_inches="tight", pad_inches=0.25)
@@ -221,7 +221,7 @@ def fig_xs_sort(sort_tbl: pd.DataFrame, key_label: str, path=None):
     ax.set_xticks(xs); ax.set_xticklabels([f"bin {int(b) + 1}\n{'most negative' if i == 0 else ('most positive' if i == len(sort_tbl) - 1 else '')}" for i, b in enumerate(sort_tbl.index)], fontsize=10)
     ax.set_xlabel(f"names ranked each day by {key_label}")
     ax.set_ylabel("next-day range / own trailing 20-day mean")
-    ax.set_title("Cross-sectional sort: quiet and wide names tomorrow", loc="left", pad=22)
+    ax.set_title("Next-day relative range by cross-sectional GEX bin", loc="left", pad=22)
     ax.text(0.0, 1.01, "bar colour: orange where most names in the bin have negative GEX, cyan otherwise; dashed line = the name's usual range", transform=ax.transAxes, color=G.DIM, fontsize=10, va="bottom")
     for i, v in enumerate(sort_tbl["range_rel_next"]):
         ax.text(i, v + 0.01, f"{v:.3f}", ha="center", va="bottom", color=G.FG, fontsize=10)
@@ -241,7 +241,7 @@ def fig_live_by_name(t6_by_name: dict, path=None):
     ax.scatter(t["sign_agreement_live"] * 100, ys, color=G.CYAN, s=40, zorder=3, label="live at today's close")
     ax.set_yticks(ys); ax.set_yticklabels(t.index, fontsize=9)
     ax.set_xlabel("agreement with the sign of the next official GEX print, %")
-    ax.set_title("The live book tracks the next print in every name", loc="left", pad=22)
+    ax.set_title("Sign agreement with the next print by name: live against stale", loc="left", pad=22)
     ax.text(0.0, 1.01, f"mean across names: stale {t['sign_agreement_stale'].mean():.1%}, live {t['sign_agreement_live'].mean():.1%}", transform=ax.transAxes, color=G.DIM, fontsize=10, va="bottom")
     ax.legend(loc="lower right", fontsize=10)
     if path:
@@ -296,9 +296,9 @@ def fig_tercile_by_name(tbl: pd.DataFrame, path=None):
     cols = [G.ORANGE if r > 1 else G.CYAN for r in t["ratio_bottom_over_top"]]
     ax.barh(ys, t["ratio_bottom_over_top"], color=cols, height=0.7, lw=0)
     ax.axvline(1.0, color=G.FG, lw=1.0, ls="--")
-    ax.set_yticks(ys); ax.set_yticklabels([f"{s}  (negative {r.share_negative:.0%} of days, p {r.p_mwu:.2f})" for s, r in t.iterrows()], fontsize=9)
+    ax.set_yticks(ys); ax.set_yticklabels([f"{s}  (negative {r.share_negative:.0%} of days, p-value {r.p_mwu:.2f})" for s, r in t.iterrows()], fontsize=9)
     ax.set_xlabel("next-day range relative to own mean: bottom GEX third / top GEX third")
-    ax.set_title("Low GEX, wider next day: name by name", loc="left", pad=22)
+    ax.set_title("Next-day range, bottom GEX third over top third, by name", loc="left", pad=22)
     ax.text(0.0, 1.01, f"{int((t['ratio_bottom_over_top'] > 1).sum())} of {len(t)} names above 1; median ratio {t['ratio_bottom_over_top'].median():.2f}; terciles of each name's own net GEX", transform=ax.transAxes, color=G.DIM, fontsize=10, va="bottom")
     if path:
         fig.savefig(path, bbox_inches="tight", pad_inches=0.25)

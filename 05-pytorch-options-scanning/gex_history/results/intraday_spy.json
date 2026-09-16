@@ -391,17 +391,17 @@
     "corr_level_stale": 0.7719600283894616,
     "corr_level_live": 0.9631976315952924,
     "mad_stale_bn": 2.474937588,
-    "mad_live_bn": 1.012439180853008,
+    "mad_live_bn": 1.0124391808530113,
     "days_sign_changed": 154,
     "live_caught_change": 0.7662337662337663
   },
   "T7_model_choice_american_vs_european": {
     "n_contracts": 2352505,
     "european_iv_unsolved_share": 0.0,
-    "t_iv_european_s": 2.03,
+    "t_iv_european_s": 1.77,
     "sign_agreement_daily": 0.9800266311584553,
     "days_sign_differs": 15,
-    "median_abs_diff_bn": 0.2574998528861895,
+    "median_abs_diff_bn": 0.25749985288619043,
     "median_rel_gamma_american_over_european": 1.000000000000956,
     "p10_p90_rel_gamma": [
       0.9999999999999934,
@@ -577,7 +577,7 @@
     },
     "r2": 0.28886045869680255,
     "last_half_hour_within_day_vol_strata": {
-      "calm so far": {
+      "narrow so far": {
         "n": 248,
         "low_0dte": 0.8469016832966452,
         "high_0dte": 0.7084100801040356,

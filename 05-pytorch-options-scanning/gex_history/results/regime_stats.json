@@ -5,7 +5,7 @@
   "tests_sign_cut": [
     {
       "test": "range",
-      "outcome": "range_pct on D+1",
+      "outcome": "high-to-low range on D+1",
       "n_pos": 316,
       "n_neg": 434,
       "mean_pos": 0.0074751715075358155,
@@ -21,7 +21,7 @@
     },
     {
       "test": "move",
-      "outcome": "abs(ret_cc) on D+1",
+      "outcome": "absolute close-to-close return on D+1",
       "n_pos": 316,
       "n_neg": 434,
       "mean_pos": 0.004596515288679774,
@@ -37,7 +37,7 @@
     },
     {
       "test": "forward vol",
-      "outcome": "annualized std of ret_cc over D+1..D+5",
+      "outcome": "annualized standard deviation of daily returns over D+1 to D+5",
       "n_pos": 316,
       "n_neg": 430,
       "mean_pos": 0.09838104767445258,
@@ -53,7 +53,7 @@
     },
     {
       "test": "continuation",
-      "outcome": "sign(ret D+1) == sign(ret D)",
+      "outcome": "return on D+1 has the same sign as the return on D",
       "n_pos": 316,
       "n_neg": 434,
       "mean_pos": 0.5474683544303798,
@@ -69,7 +69,7 @@
     },
     {
       "test": "gap fade",
-      "outcome": "sign(open->close D+1) != sign(close D -> open D+1)",
+      "outcome": "the open-to-close move on D+1 has the opposite sign to the overnight gap",
       "n_pos": 316,
       "n_neg": 434,
       "mean_pos": 0.5411392405063291,
@@ -81,7 +81,7 @@
       "ci_hi": 0.11770110249081261,
       "p_mwu": 0.24017501501263128,
       "expectation": "higher in +GEX",
-      "verdict": "direction only, CI includes 0"
+      "verdict": "direction only, confidence interval includes 0"
     },
     {
       "test": "autocorrelation",
@@ -134,7 +134,7 @@
     },
     {
       "k": 0,
-      "pearson": -0.39657900618040826,
+      "pearson": -0.3965790061804083,
       "spearman": -0.5130614216505652,
       "n": 751
     },
@@ -177,7 +177,7 @@
       "mean dist to wall %": 0.787435975562588,
       "median dist to wall %": 0.6238051754361872,
       "mean dist to nearest $5 %": 0.21190819852370613,
-      "share of days closer to wall than prev close": 0.4462025316455696
+      "share of days closer to the wall than the previous close": 0.4462025316455696
     },
     {
       "days": "all days",
@@ -186,16 +186,16 @@
       "mean dist to wall %": 2.8947413842052696,
       "median dist to wall %": 2.146844926981938,
       "mean dist to nearest $5 %": 0.21308494947229284,
-      "share of days closer to wall than prev close": 0.5460829493087558
+      "share of days closer to the wall than the previous close": 0.5460829493087558
     },
     {
       "days": "all days",
-      "regime in force": "p (MWU, + vs -)",
+      "regime in force": "p-value (Mann-Whitney, positive against negative)",
       "n": 750,
       "mean dist to wall %": 1.2311011669928744e-48,
       "median dist to wall %": NaN,
       "mean dist to nearest $5 %": NaN,
-      "share of days closer to wall than prev close": NaN
+      "share of days closer to the wall than the previous close": NaN
     },
     {
       "days": "third Fridays",
@@ -204,7 +204,7 @@
       "mean dist to wall %": 0.5954332252734165,
       "median dist to wall %": 0.44465411398375565,
       "mean dist to nearest $5 %": 0.1637778342487355,
-      "share of days closer to wall than prev close": 0.3888888888888889
+      "share of days closer to the wall than the previous close": 0.3888888888888889
     },
     {
       "days": "third Fridays",
@@ -213,16 +213,16 @@
       "mean dist to wall %": 2.8353956584258304,
       "median dist to wall %": 2.4327784891165174,
       "mean dist to nearest $5 %": 0.1682315585939663,
-      "share of days closer to wall than prev close": 0.4
+      "share of days closer to the wall than the previous close": 0.4
     },
     {
       "days": "third Fridays",
-      "regime in force": "p (MWU, + vs -)",
+      "regime in force": "p-value (Mann-Whitney, positive against negative)",
       "n": 33,
       "mean dist to wall %": 0.00042329109215993854,
       "median dist to wall %": NaN,
       "mean dist to nearest $5 %": NaN,
-      "share of days closer to wall than prev close": NaN
+      "share of days closer to the wall than the previous close": NaN
     }
   ],
   "intraday_ac1_by_regime": [

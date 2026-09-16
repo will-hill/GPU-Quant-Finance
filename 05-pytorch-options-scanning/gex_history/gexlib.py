@@ -214,7 +214,7 @@ def prep_all(days, stock: pd.DataFrame, sofr: pd.Series, verbose: bool = True, s
     sh = pd.DataFrame(shares).set_index("date")
     if verbose:
         rows = chain.groupby("date").size()
-        print(f"chain prep: {len(shares)} days, {len(chain):,} rows; rows/day min {rows.min()} median {int(rows.median())} max {rows.max()}; "
+        print(f"chain prep: {len(shares)} days, {len(chain):,} rows; rows per day: fewest {rows.min()}, median {int(rows.median())}, most {rows.max()}; "
               f"{time.perf_counter() - t0:.1f}s; skipped (no SPY bar): {skipped}")
     return chain, sh
 
@@ -223,7 +223,7 @@ def filter_table(shares: pd.DataFrame) -> pd.DataFrame:
     """Median (and max) share of the day's OI in each drop bucket, for the notebook."""
     rows = []
     for k in DROP_ORDER:
-        rows.append({"bucket": k, "what": DROP_LABEL[k], "median OI share": shares[k].median(), "max OI share": shares[k].max()})
+        rows.append({"bucket": k, "what": DROP_LABEL[k], "median open interest share": shares[k].median(), "largest open interest share": shares[k].max()})
     return pd.DataFrame(rows).set_index("bucket")
 
 
@@ -397,8 +397,8 @@ def band_share_day(day, S: float, r: float) -> pd.DataFrame:
     m = ok["strike"] / ok["S"]
     ok["band"] = pd.cut(m, [0, 0.8, 0.9, 1.1, 1.2, np.inf], labels=["< 0.80 S", "0.80 to 0.90 S", "0.90 to 1.10 S", "1.10 to 1.20 S", "> 1.20 S"])
     a = ok["gex"].abs()
-    out = pd.DataFrame({"abs GEX share": a.groupby(ok["band"], observed=False).sum() / a.sum(),
-                        "OI share": ok["open_interest"].groupby(ok["band"], observed=False).sum() / ok["open_interest"].sum(),
+    out = pd.DataFrame({"absolute GEX share": a.groupby(ok["band"], observed=False).sum() / a.sum(),
+                        "open interest share": ok["open_interest"].groupby(ok["band"], observed=False).sum() / ok["open_interest"].sum(),
                         "contracts": ok.groupby("band", observed=False).size()})
     return out
 
@@ -454,11 +454,11 @@ def select_episodes(daily: pd.DataFrame, stock: pd.DataFrame, n_each: int = 4, n
 
 # ----------------------------------------------------------------------------- step 6: leading-indicator tests
 TESTS = [
-    ("range", "range_next", "range_pct on D+1", "lower in +GEX"),
-    ("move", "absret_next", "abs(ret_cc) on D+1", "lower in +GEX"),
-    ("forward vol", "fvol_5d", "annualized std of ret_cc over D+1..D+5", "lower in +GEX"),
-    ("continuation", "continuation", "sign(ret D+1) == sign(ret D)", "lower in +GEX"),
-    ("gap fade", "gap_fade", "sign(open->close D+1) != sign(close D -> open D+1)", "higher in +GEX"),
+    ("range", "range_next", "high-to-low range on D+1", "lower in +GEX"),
+    ("move", "absret_next", "absolute close-to-close return on D+1", "lower in +GEX"),
+    ("forward vol", "fvol_5d", "annualized standard deviation of daily returns over D+1 to D+5", "lower in +GEX"),
+    ("continuation", "continuation", "return on D+1 has the same sign as the return on D", "lower in +GEX"),
+    ("gap fade", "gap_fade", "the open-to-close move on D+1 has the opposite sign to the overnight gap", "higher in +GEX"),
     ("autocorrelation", "ac_product", "lag-1 autocorrelation of ret_cc within regime", "negative in +GEX"),
 ]
 
@@ -544,7 +544,7 @@ def verdicts(tests: pd.DataFrame) -> pd.Series:
         want_lower = r["expectation"].startswith("lower") or r["expectation"].startswith("negative")
         sign_ok = (r["diff"] < 0) if want_lower else (r["diff"] > 0)
         ci_excl = (r["ci_hi"] < 0) or (r["ci_lo"] > 0)
-        v[name] = "supported" if (sign_ok and ci_excl) else ("direction only, CI includes 0" if sign_ok else "not supported")
+        v[name] = "supported" if (sign_ok and ci_excl) else ("direction only, confidence interval includes 0" if sign_ok else "not supported")
     return pd.Series(v, name="verdict")
 
 
@@ -582,12 +582,12 @@ def pinning_test(daily: pd.DataFrame) -> pd.DataFrame:
             m = mask & (prev["regime"] == reg) & d_wall.notna()
             rows.append({"days": label, "regime in force": reg, "n": int(m.sum()), "mean dist to wall %": float(d_wall[m].mean()),
                          "median dist to wall %": float(d_wall[m].median()), "mean dist to nearest $5 %": float(d_5[m].mean()),
-                         "share of days closer to wall than prev close": float(approach[m].mean())})
+                         "share of days closer to the wall than the previous close": float(approach[m].mean())})
         a = d_wall[mask & (prev["regime"] == 1) & d_wall.notna()]
         b = d_wall[mask & (prev["regime"] == -1) & d_wall.notna()]
         p = float(mannwhitneyu(a, b, alternative="two-sided").pvalue) if len(a) > 2 and len(b) > 2 else np.nan
-        rows.append({"days": label, "regime in force": "p (MWU, + vs -)", "n": int(len(a) + len(b)), "mean dist to wall %": p,
-                     "median dist to wall %": np.nan, "mean dist to nearest $5 %": np.nan, "share of days closer to wall than prev close": np.nan})
+        rows.append({"days": label, "regime in force": "p-value (Mann-Whitney, positive against negative)", "n": int(len(a) + len(b)), "mean dist to wall %": p,
+                     "median dist to wall %": np.nan, "mean dist to nearest $5 %": np.nan, "share of days closer to the wall than the previous close": np.nan})
     return pd.DataFrame(rows).set_index(["days", "regime in force"])
 
 
@@ -714,7 +714,7 @@ def fig_overview(daily: pd.DataFrame, path=None):
     g = _bn(daily["gex_net_usd"])
     ax2.bar(daily.index, g, width=1.0, color=[regime_color(s) for s in np.sign(g)], lw=0)
     ax2.axhline(0, color=DIM2, lw=0.8)
-    ax2.set_ylabel("net GEX, $bn per 1% move")
+    ax2.set_ylabel("net GEX, billion $ per 1% move")
     ax2.set_xlabel("")
     fig.align_ylabels()
     if path:
@@ -745,7 +745,7 @@ def fig_episode(daily: pd.DataFrame, stock: pd.DataFrame, start, end, kind: str,
     ax1.axvspan(mdates.date2num(start) - 0.5, mdates.date2num(end) + 0.5, fill=False, edgecolor=FG, lw=1.0, ls="--")
     last = d.loc[end]
     xr = x[-1] + 0.9
-    for col, c, lab in (("wall_pos_strike", CYAN, "+ wall"), ("wall_neg_strike", ORANGE, "- wall")):
+    for col, c, lab in (("wall_pos_strike", CYAN, "positive wall"), ("wall_neg_strike", ORANGE, "negative wall")):
         y = last[col]
         if np.isfinite(y):
             ax1.plot([xr - 0.4, xr + 0.6], [y, y], color=c, lw=3.5, solid_capstyle="butt")
@@ -755,7 +755,7 @@ def fig_episode(daily: pd.DataFrame, stock: pd.DataFrame, start, end, kind: str,
     label = "Negative" if kind == "neg" else "Positive"
     ax1.set_title(f"{label} GEX episode, {pd.Timestamp(start):%d %b %Y} to {pd.Timestamp(end):%d %b %Y}", loc="left", pad=22)
     med = d.loc[start:end, "gex_net_usd"].median() / 1e9
-    ax1.text(0.0, 1.015, f"median net GEX in the episode {med:+.1f} $bn per 1% move.  Dashed box: days the sign was observed.  Shading: regime in force (cyan +, orange -).",
+    ax1.text(0.0, 1.015, f"median net GEX in the episode {med:+.1f} billion $ per 1% move.  Dashed box: days the sign was observed.  Shading: regime in force (cyan positive, orange negative).",
              transform=ax1.transAxes, ha="left", va="bottom", color=DIM, fontsize=10)
     if fl.notna().any():
         ax1.legend(loc="upper left", fontsize=10)
@@ -784,7 +784,7 @@ def fig_lead_test(out: pd.DataFrame, xc: pd.DataFrame, group: pd.Series, cut_lab
         ax1.text(pos_, m, f"median {m:.2f}%", color=FG, ha="center", va="bottom", fontsize=10.5,
                  bbox={"facecolor": BG, "alpha": 0.75, "lw": 0, "pad": 1.5})
     ax1.set_xticks([0, 1]); ax1.set_xticklabels(["positive GEX\nat close of D", "negative GEX\nat close of D"])
-    ax1.set_ylabel("next-day range (high - low) / prev close, %")
+    ax1.set_ylabel("next-day range (high - low) / previous close, %")
     ax1.set_title(f"Next-day range by regime ({cut_label})", loc="left", fontsize=14)
     ax1.legend(loc="upper right", fontsize=9.5)
     ax1.set_xlim(-0.6, 1.6)
@@ -796,8 +796,8 @@ def fig_lead_test(out: pd.DataFrame, xc: pd.DataFrame, group: pd.Series, cut_lab
     ax2.axvline(0, color=PURPLE, lw=1.0, ls=":")
     ax2.set_xticks(ks)
     ax2.set_xlabel("k, trading days (k > 0: GEX leads range)")
-    ax2.set_ylabel("corr(GEX on D, range on D+k)")
-    ax2.set_title("Lead (k > 0) versus reaction (k < 0)", loc="left", fontsize=14, pad=20)
+    ax2.set_ylabel("correlation of GEX on D\nwith the range on D+k")
+    ax2.set_title("Correlation of GEX on day D with the range on day D+k", loc="left", fontsize=13, pad=20)
     ax2.text(0.0, 1.01, "gray: range before the GEX print.  cyan: range after it.  purple: same day.", transform=ax2.transAxes, color=DIM, fontsize=9.5, va="bottom")
     if path:
         fig.savefig(path, bbox_inches="tight", pad_inches=0.25)
@@ -812,12 +812,12 @@ def fig_vendor(vd: pd.DataFrame, stats: dict, path=None):
     lim = [min(e.min(), v.min()) * 1.05, max(e.max(), v.max()) * 1.05]
     ax.plot(lim, lim, color=DIM2, lw=1.0, ls="--")
     ax.scatter(e, v, s=14, color=PURPLE, alpha=0.7, lw=0)
-    ax.set_xlabel("engine GEX (ALO American gamma), $bn per 1% move")
-    ax.set_ylabel("vendor GEX (Theta Data gamma), $bn per 1% move")
-    ax.set_title("Vendor gamma and engine gamma agree on daily GEX", loc="left")
+    ax.set_xlabel("engine GEX (ALO American gamma), billion $ per 1% move")
+    ax.set_ylabel("vendor GEX (Theta Data gamma), billion $ per 1% move")
+    ax.set_title("Daily net GEX: vendor gamma against engine gamma", loc="left")
     s = stats["all"]
-    ax.text(0.02, 0.96, f"{s['n_days']} days   corr {s['corr']:.3f}   sign agreement {s['sign_agreement']:.1%}\n"
-                        f"median relative difference {s['rel_diff_median']:.1%}   p99 {s['rel_diff_p99']:.1%}",
+    ax.text(0.02, 0.96, f"{s['n_days']} days   correlation {s['corr']:.3f}   sign agreement {s['sign_agreement']:.1%}\n"
+                        f"median relative difference {s['rel_diff_median']:.1%}   99th percentile {s['rel_diff_p99']:.1%}",
             transform=ax.transAxes, va="top", color=FG, fontsize=11)
     ax.set_xlim(lim); ax.set_ylim(lim)
     if path:
@@ -837,8 +837,8 @@ def fig_intraday(tab: pd.DataFrame, path=None):
     ax.axhline(0, color=DIM2, lw=0.8)
     ax.set_xticks(xs); ax.set_xticklabels([f"{'positive' if r > 0 else 'negative'} GEX in force\nn = {int(n)} days" for r, n in zip(tab.index, tab["n"])])
     ax.set_ylabel("mean lag-1 autocorrelation of 30-minute returns")
-    ax.set_title("Intraday reversal by GEX regime", loc="left", pad=22)
-    ax.text(0.0, 1.015, "bars: mean of the per-day lag-1 autocorrelation of 30-minute returns.  whiskers: bootstrap 95% CI.", transform=ax.transAxes, color=DIM, fontsize=10, va="bottom")
+    ax.set_title("Lag-1 autocorrelation of 30-minute returns by regime", loc="left", pad=22)
+    ax.text(0.0, 1.015, "bars: mean of the per-day lag-1 autocorrelation of 30-minute returns.  whiskers: bootstrap 95% confidence interval.", transform=ax.transAxes, color=DIM, fontsize=10, va="bottom")
     if path:
         fig.savefig(path, bbox_inches="tight", pad_inches=0.25)
     return fig

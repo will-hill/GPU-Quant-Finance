@@ -60,21 +60,21 @@ def conclusions_md():
     def s(name, pct=True, sign="", digits=2):
         t = tests[name]
         f = (lambda v: f"{v:{sign}.{digits}%}") if pct else (lambda v: f"{v:{sign}.3f}")
-        pv = "p < 0.001" if t["p_mwu"] < 0.0005 else f"p = {t['p_mwu']:.3f}"
+        pv = "p-value below 0.001" if t["p_mwu"] < 0.0005 else f"p-value {t['p_mwu']:.3f}"
         return (f"{f(t['mean_pos'])} after a positive-GEX close against {f(t['mean_neg'])} after a negative one, difference {f(t['diff'])}, "
-                f"95% CI [{f(t['ci_lo'])}, {f(t['ci_hi'])}], {pv}")
+                f"95% confidence interval [{f(t['ci_lo'])}, {f(t['ci_hi'])}], {pv}")
     pa, pn = pin[("all days", "1")], pin[("all days", "-1")]
     lines = ["## Conclusions", "",
              f"1. Moves are damped after positive GEX: mean next-day range {s('range')} ({tests['range']['verdict']}); mean absolute next-day return {s('move')} ({tests['move']['verdict']}).",
              f"2. Realized vol is lower after positive GEX: mean annualized 5-day forward vol {s('forward vol', digits=1)} ({tests['forward vol']['verdict']}).",
              f"3. Trends do not extend more under negative GEX: the next-day continuation rate is {s('continuation', digits=1)}, the reverse of the claim ({tests['continuation']['verdict']}), and the lag-1 autocorrelation of daily returns is {tests['autocorrelation']['mean_pos']:+.3f} under positive GEX against {tests['autocorrelation']['mean_neg']:+.3f} under negative, again the reverse ({tests['autocorrelation']['verdict']}).",
              f"4. Gaps fade slightly more often after positive GEX: {s('gap fade', digits=1)} ({tests['gap fade']['verdict']}).",
-             f"5. Pinning is proximity, not attraction: the close sits {pa['mean dist to wall %']:.2f}% from the positive wall under positive GEX against {pn['mean dist to wall %']:.2f}% under negative, but the close moved toward the wall on {pa['share of days closer to wall than prev close']:.1%} of positive-GEX days against {pn['share of days closer to wall than prev close']:.1%} of negative-GEX days (not supported).",
+             f"5. Pinning: the close sits {pa['mean dist to wall %']:.2f}% from the positive wall under positive GEX against {pn['mean dist to wall %']:.2f}% under negative, but the close moved toward the wall on {pa['share of days closer to the wall than the previous close']:.1%} of positive-GEX days against {pn['share of days closer to the wall than the previous close']:.1%} of negative-GEX days (not supported).",
              ]
     it = st.get("intraday_ac1_by_regime")
     if it:
         a = {int(r["regime"]): r for r in it}
-        lines.append(f"6. Intraday reversal is in the expected order but not distinguishable: mean lag-1 autocorrelation of 30-minute returns {a[1]['mean']:+.3f} under positive GEX (95% CI [{a[1]['ci_lo']:+.3f}, {a[1]['ci_hi']:+.3f}], n = {a[1]['n']}) against {a[-1]['mean']:+.3f} under negative ([{a[-1]['ci_lo']:+.3f}, {a[-1]['ci_hi']:+.3f}], n = {a[-1]['n']}), Mann-Whitney p = {st['intraday_mwu_p']:.3f} (direction only, CI overlap).")
+        lines.append(f"6. Intraday reversal: mean lag-1 autocorrelation of 30-minute returns {a[1]['mean']:+.3f} under positive GEX (95% confidence interval [{a[1]['ci_lo']:+.3f}, {a[1]['ci_hi']:+.3f}], n = {a[1]['n']}) against {a[-1]['mean']:+.3f} under negative ([{a[-1]['ci_lo']:+.3f}, {a[-1]['ci_hi']:+.3f}], n = {a[-1]['n']}), Mann-Whitney p-value {st['intraday_mwu_p']:.3f} (direction only, the intervals overlap).")
     lines += ["", f"Net GEX was negative on {share_neg:.0%} of the {st['n_days']} days, so the positive-GEX sample is the smaller one. " + lead_md(),
               "", "Educational analysis, not a trading strategy."]
     return "\n".join(lines)
@@ -116,7 +116,7 @@ sys.path.insert(0, "gex_history")
 import gexlib as G
 pd.set_option("display.width", 220); pd.set_option("display.max_columns", 40)
 log = json.loads((G.RESULTS / "download_log.json").read_text())
-print(f"window {log['window']['start']} to {log['window']['end']}: {log['trading_days_complete']} trading days with quotes, OI and Greeks")
+print(f"window {log['window']['start']} to {log['window']['end']}: {log['trading_days_complete']} trading days with quotes, open interest and Greeks")
 print(f"holidays with no data: {len(log['holidays_no_data'])}; partial days: {len(log['partial_days'])}; cache {log['cache_mb']} MB")
 print("rows per day:", {k: (v['min'], v['median'], v['max']) for k, v in log['rows_per_day'].items()})
 stock, sofr, days = G.load_stock(verbose=True), G.load_sofr(), G.study_days()
@@ -127,11 +127,11 @@ print(f"{len(days)} study days {days[0]} to {days[-1]}; SPY bars from {stock.ind
 md("""
 ## Chain prep
 
-Per day D the universe is the OI record dated D. Quotes of D are joined on (expiration, strike, right). S is the SPY close on D, T = (expiration - D) / 365.25 years. Rules, in order:
+Per day D the universe is the open interest record dated D. Quotes of D are joined on (expiration, strike, right). S is the SPY close on D, T = (expiration - D) / 365.25 years. Rules, in order:
 
 - 1 <= days to expiry <= 120. Contracts expiring on D are gone at the close and drop out.
 - 0.80 S <= strike <= 1.20 S. Gamma outside that band is negligible for GEX; the table after the next one shows the |GEX| share by band on one day solved without the cut.
-- open interest > 0 (zero OI is zero GEX; those rows are not solved).
+- open interest > 0 (zero open interest is zero GEX; those rows are not solved).
 - bid > 0, ask >= bid, mid > intrinsic + 1e-6: the engine's own requirements. Contracts at or below intrinsic sit in the exercise region where the model gamma is 0, so they contribute 0 GEX by construction.
 
 The scanner's `dte >= 7`, `mid >= 0.05` and `0.4 <= S/K <= 2.5` filters are not applied. They were for the IV benchmark, and near-dated, low-priced contracts are where SPY gamma lives. The table shows the share of the day's open interest in each bucket, median and max across days.
@@ -140,21 +140,21 @@ The scanner's `dte >= 7`, `mid >= 0.05` and `0.4 <= S/K <= 2.5` filters are not 
 code("""
 chain, shares = G.prep_all(days, stock, sofr)
 ft = G.filter_table(shares)
-ft.style.format({"median OI share": "{:.1%}", "max OI share": "{:.1%}"})
+ft.style.format({"median open interest share": "{:.1%}", "largest open interest share": "{:.1%}"})
 """)
 
 code("""
 day = [d for d in days if d.weekday() == 2][-10]        # a Wednesday near the end of the window
 bs = G.band_share_day(day, float(stock.loc[pd.Timestamp(day), "close"]), G.rate_for(sofr, day))
-print(f"{day}: share of total |GEX| and of OI by strike band, all strikes solved")
-bs.style.format({"abs GEX share": "{:.2%}", "OI share": "{:.1%}"})
+print(f"{day}: share of total absolute GEX and of open interest by strike band, all strikes solved")
+bs.style.format({"absolute GEX share": "{:.2%}", "open interest share": "{:.1%}"})
 """)
 
 # ----------------------------------------------------------------------------- step 4
 md("""
 ## Engine run
 
-`gexlib.solve_chain` mirrors `engine_alo/run_chain.py`: `Tables(7, 7, 27)`, `make_core(m_iter=4)`, a bracketed-secant IV solve with 12 model evaluations per contract, then one `Engine.price` call for model value, delta and gamma at the solved IV. Reference build: CPU, fp64. `iv_status` 0 means solved with the model value at the solved IV within 1e-3 of the mid; other codes are excluded from GEX and their OI share is reported. The excluded contracts are deep in-the-money calls whose mid sits below the zero-vol model value under the flat r and q. They cluster in the two weeks before SPY's quarterly ex-dividend dates, which is dividend-capture positioning that a continuous-yield model cannot fit. The vendor's gamma for those contracts is also 0, so the choice does not affect the cross-check.
+`gexlib.solve_chain` mirrors `engine_alo/run_chain.py`: `Tables(7, 7, 27)`, `make_core(m_iter=4)`, a bracketed-secant IV solve with 12 model evaluations per contract, then one `Engine.price` call for model value, delta and gamma at the solved IV. Reference build: CPU, fp64. `iv_status` 0 means solved with the model value at the solved IV within 1e-3 of the mid; other codes are excluded from GEX and their open interest share is reported. The excluded contracts are deep in-the-money calls whose mid sits below the zero-vol model value under the flat r and q. They cluster in the two weeks before SPY's quarterly ex-dividend dates, which is dividend-capture positioning that a continuous-yield model cannot fit. The vendor's gamma for those contracts is also 0, so the choice does not affect the cross-check.
 """)
 
 code("""
@@ -174,8 +174,8 @@ try:
         sol32, t32 = G.solve_chain(chain, target="cuda", dtype="fp32")
         d_net = (sol32[sol32.iv_status == 0].groupby("date")["gex"].sum() - sol[sol.iv_status == 0].groupby("date")["gex"].sum()).abs()
         print(t32)
-        print(f"GPU fp32 versus CPU fp64 daily net GEX: max abs diff {d_net.max():,.0f} USD, "
-              f"max relative {(d_net / sol[sol.iv_status == 0].groupby('date')['gex'].sum().abs()).max():.2e}; timings for scale only")
+        print(f"GPU fp32 versus CPU fp64 daily net GEX: largest absolute difference {d_net.max():,.0f} dollars, "
+              f"largest relative difference {(d_net / sol[sol.iv_status == 0].groupby('date')['gex'].sum().abs()).max():.2e}; timings for scale only")
     else:
         print("no CUDA device: GPU timing skipped")
 except Exception as e:
@@ -197,7 +197,7 @@ daily = G.daily_gex(sol, stock, flips)
 daily.to_csv(G.RESULTS / "spy_gex_daily.csv", float_format="%.8g")
 print(f"{len(daily)} days; negative net GEX on {(daily.regime < 0).mean():.1%} of days; "
       f"flip level on the grid on {daily.flip_level.notna().mean():.1%} of days; "
-      f"median net GEX {daily.gex_net_usd.median() / 1e9:+.2f} $bn per 1%; "
+      f"median net GEX {daily.gex_net_usd.median() / 1e9:+.2f} billion dollars per 1%; "
       f"median share of |GEX| within 30 days to expiry {daily.gex_le30d_share.median():.1%}")
 daily.head(8)
 """)
@@ -248,7 +248,7 @@ for _, r in eps.iterrows():
 md("""
 ## Next-session tests conditioned on the sign
 
-All outcomes are measured on D+1 (or D+1 to D+5) conditioned on the regime known at the close of D. For each test: n per regime, mean and median per regime, the difference (positive minus negative), a bootstrap 95% CI of the difference (10,000 resamples, seed 0) and a two-sided Mann-Whitney U p-value. The autocorrelation row reports the lag-1 correlation of daily returns within each regime, a bootstrap CI of the difference in correlations, and the Mann-Whitney p-value of the per-day products ret(D) x ret(D+1). "Supported" means the difference has the expected sign and the CI excludes zero.
+All outcomes are measured on D+1 (or D+1 to D+5) conditioned on the regime known at the close of D. For each test: n per regime, mean and median per regime, the difference (positive minus negative), a bootstrap 95% confidence interval of the difference (10,000 resamples, seed 0) and a two-sided Mann-Whitney U p-value. The autocorrelation row reports the lag-1 correlation of daily returns within each regime, a bootstrap confidence interval of the difference in correlations, and the Mann-Whitney p-value of the per-day products ret(D) x ret(D+1). "Supported" means the difference has the expected sign and the confidence interval excludes zero.
 """)
 
 code("""
@@ -275,7 +275,7 @@ else:
 """)
 
 md("""
-### Lead against coincidence
+### Cross-correlation of GEX with the range at leads and lags
 
 Negative GEX is partly a consequence of a selloff: puts get bid and spot falls toward the put wall. The leading claim needs the k > 0 side of the cross-correlation between GEX on D and the daily range on D+k to hold up, and the k < 0 side is shown next to it.
 """)
@@ -283,7 +283,7 @@ Negative GEX is partly a consequence of a selloff: puts get bid and spot falls t
 code("""
 xc = G.cross_correlation(daily, stock)
 lead = xc.loc[1:5, "pearson"].mean(); react = xc.loc[-5:-1, "pearson"].mean()
-print(f"corr(GEX on D, range on D+k): k=0 {xc.loc[0, 'pearson']:+.3f}; mean over k=1..5 {lead:+.3f}; mean over k=-5..-1 {react:+.3f}")
+print(f"correlation of GEX on D with the range on D+k: k = 0 {xc.loc[0, 'pearson']:+.3f}; mean over k = 1 to 5 {lead:+.3f}; mean over k = -5 to -1 {react:+.3f}")
 print("negative values mean lower GEX goes with a wider range")
 _ = G.fig_lead_test(out, xc, out["regime"], "sign cut", G.FIGURES / "f3_lead_test.png")
 if tests_t is not None:
@@ -296,7 +296,7 @@ md(lead_md())
 md("""
 ### Pinning
 
-SPY lists expirations every weekday in this window, so every day is an expiration day. Distance from the close of D to the positive wall known at the close of D-1, in percent of S, by the regime in force on D. Baseline: distance to the nearest 5-dollar strike. Third Fridays, where the monthly open interest sits, are shown as a subgroup. A null result stays in the notebook.
+SPY lists expirations every weekday in this window, so every day is an expiration day. Distance from the close of D to the positive wall known at the close of D-1, in percent of S, by the regime in force on D. Baseline: distance to the nearest 5-dollar strike. Third Fridays, where the monthly open interest sits, are shown as a subgroup. The result is reported either way.
 """)
 
 code("""
@@ -308,7 +308,7 @@ pin.style.format("{:.3f}")
 md("""
 ## Intraday reversal
 
-30-minute log returns from the SPY 1-minute bars (last 1-minute close per 30-minute bucket, 12 returns per full session). Per day, the lag-1 autocorrelation of those returns; then the mean by the regime in force with a bootstrap 95% CI. Expectation: negative under positive GEX, less negative or positive under negative GEX.
+30-minute log returns from the SPY 1-minute bars (last 1-minute close per 30-minute bucket, 12 returns per full session). Per day, the lag-1 autocorrelation of those returns; then the mean by the regime in force with a bootstrap 95% confidence interval. Expectation: negative under positive GEX, less negative or positive under negative GEX.
 """)
 
 code("""
@@ -332,7 +332,7 @@ G.save_json(stats, G.RESULTS / "regime_stats.json")
 md("""
 ## Vendor gamma cross-check
 
-Theta Data provides Greeks with the EOD report. The series recomputes them for a consistent American model across the whole chain and for refresh rate. Here the vendor gamma replaces the engine gamma with the same rows, open interest and formula. Table: daily correlation of vendor and engine net GEX, sign agreement, median and p99 of the relative difference, the absolute difference in dollars, and the same restricted to contracts within 7 days of expiry. The relative difference of a net figure is large on days when the net is near zero, so the absolute difference is the number to read. The ratio of vendor to engine GEX is given for calls and puts separately, and the second table shows the median relative gamma difference by expiry and moneyness bucket.
+Theta Data provides Greeks with the EOD report. The series recomputes them for a consistent American model across the whole chain and for refresh rate. Here the vendor gamma replaces the engine gamma with the same rows, open interest and formula. Table: daily correlation of vendor and engine net GEX, sign agreement, median and 99th percentile of the relative difference, the absolute difference in dollars, and the same restricted to contracts within 7 days of expiry. The relative difference of a net figure is large on days when the net is near zero, so the absolute difference is the number to read. The ratio of vendor to engine GEX is given for calls and puts separately, and the second table shows the median relative gamma difference by expiry and moneyness bucket.
 """)
 
 code("""
