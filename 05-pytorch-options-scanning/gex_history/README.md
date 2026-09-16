@@ -19,6 +19,8 @@ remark_gpu.py                   device-resident re-mark kernel around the engine
 download_universe.py            multi-symbol pull (quotes, OI, spot, 1-minute bars) for the cross-section
 cross_section.py                per-name daily GEX + profiles, pooled tests, cross-sectional sort, pooled intraday tests
 build_cross_section_notebook.py writes ../gex_cross_section.ipynb
+per_symbol_tests.py            every indication as one statistic per symbol -> results/cross_section/per_symbol_tests.json
+rows.py, build_row_notebooks.py one notebook per indication into ../gex_rows/
 cache/                          one parquet per endpoint per day (gitignored)
 figures/                        PNG, 1920x1080 (gitignored; the notebook outputs carry them)
 results/
@@ -35,6 +37,13 @@ results/
 
 Notebooks at the module top level: `gex_history_spy.ipynb` (daily regime tests, 3 years), `gex_intraday_spy.ipynb`
 (what re-marking the book intraday adds), `gex_cross_section.ipynb` (the most active names, 1 year).
+
+`../gex_rows/row01..row10_*.ipynb`: one notebook per demonstrated indication (title line plus code), built by
+`build_row_notebooks.py` on `rows.py`; each computes SPY live and shows the per-name table from
+`results/cross_section/per_symbol_tests.json` (`per_symbol_tests.py`, SPY QQQ IWM NVDA TSLA AAPL AMZN META MSFT AMD).
+Rows: 1 re-mark tracks the next print; 2 level at 10:00 sets the rest of day; 3 re-mark beats the stale print for the
+next 30 minutes; 4 flip crossings; 5 the 0DTE layer; 6 persistence; 7 intraday realized vol by daily regime;
+8 next-day range; 9 next-week vol; 10 tail days.
 
 ## How to rerun
 
