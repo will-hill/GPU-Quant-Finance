@@ -17,7 +17,7 @@ always the same: **same scikit-learn API, no rewrite, NVIDIA GPU speed.**
 | **02** | [Ledoit-Wolf shrinkage to reduce portfolio turnover](02-lw-turnover/LedoitWolf_Turnover_Demo.ipynb) | `%load_ext cuml.accel` | **2.5 h → 9 min (~17×)**; −57% turnover | https://www.youtube.com/shorts/6eyJM30fMmw |
 | **03** | [KDE of return distributions vs the normal model](03-kde-stylized-facts/KDE_Stylized_Facts_Demo.ipynb) | `%load_ext cuml.accel` | **~6 min → seconds** for 100 bootstrap KDE refits (grows with sample size) | https://www.youtube.com/shorts/s-PO23lKXlw |
 | **04** | [HDBSCAN of a detoned, returns correlation matrix](04-hdbscan-corr-stats-sectors/HDBSCAN_Statistical_Sectors_Demo_with_Benchmarking.ipynb) | `%load_ext cudf.pandas`<br>`%load_ext cuml.accel` | **9 min → ~0.5 s** (HDBSCAN on 8,471 tickers / 72 M correlations) | https://www.youtube.com/shorts/4-adXn5rA8Y |
-| **05** | [Options Scanning with PyTorch and Theta Data](05-pytorch-options-scanning/options_scanner_pytorch.ipynb) | `%load_ext cudf.pandas`<br>`%load_ext cuml.accel` | **10M options per sec** | TBD |
+| **05** | [GEX Scanning with Python, Numba and Theta Data](05-GEX-scanning/intraday_American_IV_GEX_Dash_Only.ipynb) | `%load_ext cudf.pandas`<br>`%load_ext cuml.accel` | **MM options per sec** | TBD |
 
 
 ## Data
